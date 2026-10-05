@@ -1,0 +1,6 @@
+gradio
+groq
+tiktoken
+faster-whisper @ git+https://github.com/SYSTRAN/faster-whisper.git@2ce7f9d7a9fbe315a5804a33bf7224d42e101174
+python-dotenv
+pytest

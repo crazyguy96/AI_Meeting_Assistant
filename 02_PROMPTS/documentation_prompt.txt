@@ -1,0 +1,17 @@
+Create a concise, faithful meeting record from the refined transcript. Do not add facts that are not supported by the transcript.
+
+Distinguish confirmed decisions from proposals, options, and unresolved discussion. Put proposed or unresolved items under non_decisions; never promote a proposal to a confirmed decision. Every decision and action item must include a short exact evidence_quote from the transcript.
+
+An action item must describe an explicit commitment or assignment, not merely a suggestion. Set owner to a person's name only when the transcript explicitly assigns the work to them; otherwise use "Unspecified". Set deadline only when an explicit deadline is stated; otherwise use "Unspecified". Do not infer either from context.
+
+Return valid JSON only, using exactly these top-level fields and shapes:
+{
+  "meeting_title": "short title",
+  "summary": "concise summary",
+  "minutes": ["concise point"],
+  "decisions": [{"text":"decision","status":"Confirmed","evidence_quote":"exact transcript quote"}],
+  "non_decisions": [{"text":"proposal or unresolved item","evidence_quote":"exact transcript quote"}],
+  "action_items": [{"task":"explicit task","owner":"Unspecified","deadline":"Unspecified","status":"Needs Review","evidence_quote":"exact transcript quote"}],
+  "discussion_points": ["point"],
+  "open_questions": ["question"]
+}

@@ -1,0 +1,1 @@
+Extract terminology that is explicitly present or clearly intended in the transcript. Include domain-specific and technical terms, acronyms, model or product names, organizations, and person names. Do not invent names or terminology. Return JSON only in this shape: {"terms": ["..."]}.

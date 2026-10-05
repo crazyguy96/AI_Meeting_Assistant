@@ -1,0 +1,127 @@
+import difflib
+import re
+from typing import Any
+
+_PROTECTED_TOKEN_PATTERN = re.compile(
+    r"(?:"
+    r"(?:US\$|CA\$|AU\$|₹|Rs\.?|INR|USD|EUR|GBP|[$€£])\s*"
+    r"\d[\d,]*(?:\.\d+)?"
+    r"(?:\s*(?:lakh|lakhs|crore|crores|cr|lpa|million|billion))?%?"
+    r"|\d[\d,]*(?:\.\d+)?\s*(?:lakh|lakhs|crore|crores|cr|lpa|million|billion)\b"
+    r"|\d[\d,]*(?:\.\d+)?%"
+    r"|\b\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b"
+    r"|\b\d[\d,]*(?:\.\d+)?\b"
+    r"|\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
+    r"january|february|march|april|may|june|july|august|september|october|"
+    r"november|december|not|never|no|cannot|can't|won't|don't|didn't|"
+    r"haven't|hasn't|isn't|aren't|wasn't|weren't|will|might|may|could|should|"
+    r"must|shall|would|can|commit|committed|promise|promised|agree|agreed|"
+    r"plan|planned|intend|intends|intended)\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def protected_tokens(text: str) -> list[str]:
+    return sorted(
+        match.group(0).lower().replace(" ", "")
+        for match in _PROTECTED_TOKEN_PATTERN.finditer(str(text))
+    )
+
+
+def safe_edit(source: str, target: str) -> tuple[bool, list[str]]:
+    unchanged = protected_tokens(source) == protected_tokens(target)
+    return unchanged, [] if unchanged else ["protected information changed"]
+
+
+def normalize_match(text: str) -> str:
+    text = re.sub(r"[^\w₹$%.]+", " ", str(text).lower(), flags=re.UNICODE)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def find_evidence(
+    quote: str, segments: list[dict[str, Any]], threshold: float = 0.80
+) -> dict[str, Any]:
+    normalized_quote = normalize_match(quote or "")
+    if not normalized_quote:
+        return {"found": False, "timestamp": "Unknown", "segment_ids": [], "score": 0}
+
+    best: dict[str, Any] = {
+        "found": False,
+        "timestamp": "Unknown",
+        "segment_ids": [],
+        "score": 0,
+    }
+    for start in range(len(segments)):
+        combined = ""
+        segment_ids = []
+        for end in range(start, min(start + 3, len(segments))):
+            segment = segments[end]
+            combined = (combined + " " + normalize_match(segment["text"])).strip()
+            segment_ids.append(segment["id"])
+            if normalized_quote in combined:
+                return {
+                    "found": True,
+                    "timestamp": segments[start].get("start", "Unknown"),
+                    "segment_ids": segment_ids,
+                    "score": 1.0,
+                }
+            score = difflib.SequenceMatcher(None, normalized_quote, combined).ratio()
+            if score > best["score"]:
+                best = {
+                    "found": score >= threshold,
+                    "timestamp": segments[start].get("start", "Unknown"),
+                    "segment_ids": segment_ids.copy(),
+                    "score": round(score, 3),
+                }
+    if not best["found"]:
+        best["timestamp"], best["segment_ids"] = "Unknown", []
+    return best
+
+
+def validate_action(action: dict[str, Any]) -> dict[str, Any]:
+    validated = dict(action)
+    validated["owner"] = str(validated.get("owner") or "Unspecified")
+    validated["deadline"] = str(validated.get("deadline") or "Unspecified")
+    validated["status"] = validated.get("status", "Needs Review")
+    evidence_quote = normalize_match(validated.get("evidence_quote", ""))
+    for field in ("owner", "deadline"):
+        value = validated[field]
+        if value.lower() != "unspecified" and normalize_match(value) not in evidence_quote:
+            validated[field] = "Unspecified"
+            validated["status"] = "Needs Review"
+    return validated
+
+
+def validate_record(
+    record: dict[str, Any], refined: dict[str, Any]
+) -> dict[str, Any]:
+    output = {
+        "meeting_title": str(record.get("meeting_title") or "Meeting"),
+        "summary": str(record.get("summary") or ""),
+        "minutes": record.get("minutes") or [],
+        "decisions": [],
+        "non_decisions": [],
+        "action_items": [],
+        "discussion_points": record.get("discussion_points") or [],
+        "open_questions": record.get("open_questions") or [],
+    }
+    segments = refined["refined_segments"]
+    for decision in record.get("decisions") or []:
+        item = dict(decision)
+        item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
+        if item["evidence"]["found"]:
+            output["decisions"].append(item)
+    for proposal in record.get("non_decisions") or []:
+        item = dict(proposal)
+        item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
+        output["non_decisions"].append(item)
+    for action in record.get("action_items") or []:
+        item = validate_action(action)
+        item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
+        if not item["evidence"]["found"]:
+            item["status"] = "Needs Review"
+            item["owner"] = "Unspecified"
+            item["deadline"] = "Unspecified"
+        output["action_items"].append(item)
+    return output

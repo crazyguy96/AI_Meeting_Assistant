@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+01_APPLICATION/outputs/
+outputs/
+*.tmp
+*.temp
+*.log
+.DS_Store
