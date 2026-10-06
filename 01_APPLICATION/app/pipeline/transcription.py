@@ -1,10 +1,12 @@
 from functools import lru_cache
+import inspect
 import logging
 from pathlib import Path
 from typing import Any
 
 from faster_whisper import WhisperModel
 
+from app.core import config
 from app.core.config import (
     WHISPER_COMPUTE_TYPE,
     WHISPER_DEVICE,
@@ -50,20 +52,42 @@ def validate_audio_file(file_path: str | Path) -> Path:
     return path
 
 
-# Loads and caches the local Faster-Whisper model on CPU using int8 quantization.
+# Loads and caches the local Faster-Whisper model using configured hardware acceleration and quantization.
 @lru_cache(maxsize=1)
-def get_whisper_model() -> WhisperModel:
+def get_whisper_model(
+    model: str | None = None,
+    device: str | None = None,
+    compute_type: str | None = None,
+) -> WhisperModel:
+    model_name = model or config.WHISPER_MODEL
+    device_name = device or config.WHISPER_DEVICE
+    compute_name = compute_type or config.WHISPER_COMPUTE_TYPE
     logger.info(
         "Loading faster-whisper model %s on %s with %s compute",
-        WHISPER_MODEL,
-        WHISPER_DEVICE,
-        WHISPER_COMPUTE_TYPE,
+        model_name,
+        device_name,
+        compute_name,
     )
     return WhisperModel(
-        WHISPER_MODEL,
-        device=WHISPER_DEVICE,
-        compute_type=WHISPER_COMPUTE_TYPE,
+        model_name,
+        device=device_name,
+        compute_type=compute_name,
     )
+
+
+# Formats a user glossary (string or collection of terms) into an initial_prompt for Whisper.
+def format_glossary_prompt(glossary: Any) -> str | None:
+    if not glossary:
+        return None
+    if isinstance(glossary, (list, tuple, set)):
+        terms = [str(term).strip() for term in glossary if str(term).strip()]
+    elif isinstance(glossary, str):
+        terms = [term.strip() for term in glossary.split(",") if term.strip()]
+    else:
+        terms = [str(glossary).strip()] if str(glossary).strip() else []
+
+    deduped = list(dict.fromkeys(terms))
+    return ", ".join(deduped) if deduped else None
 
 
 # Converts a duration in seconds into a formatted HH:MM:SS or MM:SS timestamp string.
@@ -80,21 +104,62 @@ def format_time(seconds: Any) -> str:
 
 
 # Transcribes the validated audio file using Faster-Whisper into timestamped raw segments and full text.
-def transcribe_audio(file_path: str | Path) -> dict[str, Any]:
+def transcribe_audio(
+    file_path: str | Path,
+    glossary: str | list[str] | None = None,
+    initial_prompt: str | None = None,
+) -> dict[str, Any]:
     logger.info("Received uploaded audio for transcription: %s", Path(file_path).name)
     path = validate_audio_file(file_path)
+
+    model_name = config.WHISPER_MODEL
+    device_name = config.WHISPER_DEVICE
+    compute_name = config.WHISPER_COMPUTE_TYPE
+
     logger.info(
         "Loading/reusing faster-whisper model %s on %s (%s)",
-        WHISPER_MODEL,
-        WHISPER_DEVICE,
-        WHISPER_COMPUTE_TYPE,
+        model_name,
+        device_name,
+        compute_name,
     )
     model = get_whisper_model()
-    logger.info("Starting English transcription: %s", path.name)
-    segments_iterator, info = model.transcribe(
-        str(path),
-        language="en",
+
+    prompt = (
+        initial_prompt.strip()
+        if isinstance(initial_prompt, str) and initial_prompt.strip()
+        else None
     )
+    if not prompt and glossary is not None:
+        prompt = format_glossary_prompt(glossary)
+
+    logger.info(
+        "Starting English transcription: %s (vad_filter=True, initial_prompt=%s)",
+        path.name,
+        repr(prompt) if prompt else "None",
+    )
+
+    transcribe_kwargs: dict[str, Any] = {
+        "language": "en",
+        "vad_filter": True,
+    }
+    if prompt:
+        transcribe_kwargs["initial_prompt"] = prompt
+
+    try:
+        sig = inspect.signature(model.transcribe)
+        has_var_kwargs = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+        )
+        if not has_var_kwargs:
+            filtered_kwargs = {
+                k: v for k, v in transcribe_kwargs.items() if k in sig.parameters
+            }
+        else:
+            filtered_kwargs = transcribe_kwargs
+        segments_iterator, info = model.transcribe(str(path), **filtered_kwargs)
+    except TypeError:
+        segments_iterator, info = model.transcribe(str(path), language="en")
+
     segments = [
         {
             "id": f"S{index:04d}",
@@ -122,7 +187,7 @@ def transcribe_audio(file_path: str | Path) -> dict[str, Any]:
         "segments": segments,
         "timestamped_text": timestamped_text,
         "backend": "faster-whisper",
-        "model": WHISPER_MODEL,
+        "model": model_name,
         "language": info.language,
         "chunked": False,
     }

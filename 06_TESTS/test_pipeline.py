@@ -383,3 +383,150 @@ def test_documentation_generate_record_token_aware_chunking(monkeypatch, capsys)
     assert len(record["action_items"]) == len(chunks_called)
 
 
+def test_whisper_config_env_vars_and_cuda_detection(monkeypatch):
+    from app.core import config
+
+    # When CUDA is detected and no env vars set -> cuda + float16
+    monkeypatch.setattr(config, "is_cuda_available", lambda: True)
+    monkeypatch.delenv("WHISPER_MODEL", raising=False)
+    monkeypatch.delenv("WHISPER_DEVICE", raising=False)
+    monkeypatch.delenv("WHISPER_COMPUTE_TYPE", raising=False)
+    model, device, compute_type = config.get_whisper_config()
+    assert model == "small"
+    assert device == "cuda"
+    assert compute_type == "float16"
+
+    # When CUDA is not detected and no env vars set -> cpu + int8
+    monkeypatch.setattr(config, "is_cuda_available", lambda: False)
+    model, device, compute_type = config.get_whisper_config()
+    assert model == "small"
+    assert device == "cpu"
+    assert compute_type == "int8"
+
+    # Explicit environment variable overrides
+    monkeypatch.setenv("WHISPER_MODEL", "medium")
+    monkeypatch.setenv("WHISPER_DEVICE", "cuda")
+    monkeypatch.setenv("WHISPER_COMPUTE_TYPE", "float32")
+    model, device, compute_type = config.get_whisper_config()
+    assert model == "medium"
+    assert device == "cuda"
+    assert compute_type == "float32"
+
+    # Explicit CPU device defaults to int8 compute
+    monkeypatch.setenv("WHISPER_DEVICE", "cpu")
+    monkeypatch.delenv("WHISPER_COMPUTE_TYPE", raising=False)
+    model, device, compute_type = config.get_whisper_config()
+    assert device == "cpu"
+    assert compute_type == "int8"
+
+
+def test_transcribe_audio_enables_vad_filter_and_passes_initial_prompt(tmp_path, monkeypatch):
+    audio = tmp_path / "meeting.wav"
+    audio.write_bytes(b"audio")
+    recorded_kwargs = {}
+
+    class FakeWhisperModelWithKwargs:
+        def transcribe(self, file_path, **kwargs):
+            recorded_kwargs.update(kwargs)
+            return iter(
+                [SimpleNamespace(start=0.0, end=1.5, text=" Testing speech.")]
+            ), SimpleNamespace(language="en")
+
+    monkeypatch.setattr(
+        transcription, "get_whisper_model", lambda: FakeWhisperModelWithKwargs()
+    )
+
+    # 1. Comma-separated string glossary with duplicates and extra spaces
+    result = transcription.transcribe_audio(audio, glossary="Docker, Kubernetes,  Docker , Helm")
+    assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("initial_prompt") == "Docker, Kubernetes, Helm"
+    assert recorded_kwargs.get("language") == "en"
+    assert result["text"] == "Testing speech."
+    assert result["chunked"] is False
+    assert result["backend"] == "faster-whisper"
+
+    # 2. List glossary
+    recorded_kwargs.clear()
+    transcription.transcribe_audio(audio, glossary=["Kafka", "Redis"])
+    assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("initial_prompt") == "Kafka, Redis"
+
+    # 3. Direct initial_prompt argument takes precedence
+    recorded_kwargs.clear()
+    transcription.transcribe_audio(audio, glossary="Ignored", initial_prompt="Direct prompt")
+    assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("initial_prompt") == "Direct prompt"
+
+    # 4. Empty/None glossary does not set initial_prompt
+    recorded_kwargs.clear()
+    transcription.transcribe_audio(audio, glossary="")
+    assert recorded_kwargs.get("vad_filter") is True
+    assert "initial_prompt" not in recorded_kwargs
+
+
+def test_transcribe_audio_uses_configured_model_and_device(tmp_path, monkeypatch):
+    from app.core import config
+
+    constructed = []
+
+    class FakeWhisperModel:
+        def __init__(self, model, device, compute_type):
+            constructed.append((model, device, compute_type))
+
+        def transcribe(self, file_path, **kwargs):
+            return iter(
+                [SimpleNamespace(start=0.0, end=1.0, text=" Test.")]
+            ), SimpleNamespace(language="en")
+
+    monkeypatch.setattr(config, "WHISPER_MODEL", "large-v3")
+    monkeypatch.setattr(config, "WHISPER_DEVICE", "cuda")
+    monkeypatch.setattr(config, "WHISPER_COMPUTE_TYPE", "float16")
+    monkeypatch.setattr(transcription, "WhisperModel", FakeWhisperModel)
+
+    transcription.get_whisper_model.cache_clear()
+    try:
+        model = transcription.get_whisper_model()
+        assert constructed == [("large-v3", "cuda", "float16")]
+    finally:
+        transcription.get_whisper_model.cache_clear()
+
+
+def test_process_meeting_passes_glossary_to_transcribe(tmp_path, monkeypatch):
+    audio = tmp_path / "meeting.wav"
+    audio.write_bytes(b"audio")
+    received_glossary = []
+    raw = {"text": "Raw transcript", "segments": []}
+    refined = {"refined_text": "Refined transcript", "refined_segments": []}
+    record = {"meeting_title": "Meeting", "decisions": [], "action_items": []}
+
+    monkeypatch.setattr(
+        main,
+        "transcribe_audio",
+        lambda path, glossary=None: received_glossary.append(glossary) or raw,
+    )
+    monkeypatch.setattr(
+        main,
+        "refine_transcription",
+        lambda raw, terms: refined,
+    )
+    monkeypatch.setattr(
+        main,
+        "generate_record",
+        lambda ref: record,
+    )
+    monkeypatch.setattr(
+        main,
+        "validate_record",
+        lambda rec, ref: rec,
+    )
+    monkeypatch.setattr(
+        main,
+        "save_outputs",
+        lambda *args: (tmp_path / "run", tmp_path / "run.zip"),
+    )
+
+    main.process_meeting(audio, glossary="PostgreSQL, Celery")
+    assert received_glossary == ["PostgreSQL, Celery"]
+
+
+

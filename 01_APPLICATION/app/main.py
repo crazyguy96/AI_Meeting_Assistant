@@ -33,7 +33,10 @@ def process_meeting(
     terms = [term.strip() for term in str(glossary).split(",") if term.strip()]
     if stage_callback:
         stage_callback("transcribing")
-    raw = transcribe_audio(audio_file)
+    try:
+        raw = transcribe_audio(audio_file, glossary=glossary)
+    except TypeError:
+        raw = transcribe_audio(audio_file)
     if partial_result_callback:
         partial_result_callback(
             {
