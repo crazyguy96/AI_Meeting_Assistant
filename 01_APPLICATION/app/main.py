@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Any, Callable
 
-from app.core.utils import render_markdown, save_outputs
+from app.core.utils import render_markdown, sanitize_exception, save_outputs
 from app.pipeline.documentation import generate_record
 from app.pipeline.evidence import validate_record
 from app.pipeline.refinement import refine_transcription
@@ -10,6 +10,9 @@ from app.pipeline.transcription import transcribe_audio, validate_audio_file
 
 logger = logging.getLogger(__name__)
 
+# Coordinates the full end-to-end meeting processing pipeline across all 10 stages:
+# validates audio, runs Faster-Whisper, refines transcript with Groq, creates structured
+# meeting documentation, validates evidence, and packages all output deliverables.
 def process_meeting(
     audio_path: str | Path,
     glossary: str = "",
@@ -61,7 +64,13 @@ def process_meeting(
     generated_record = generate_record(refined)
     if stage_callback:
         stage_callback("validating")
-    record = validate_record(generated_record, refined)
+    print("[STAGE] evidence", flush=True)
+    try:
+        record = validate_record(generated_record, refined)
+    except Exception as exc:
+        print("[ERROR] stage=evidence", flush=True)
+        print(f"[ERROR] exception={sanitize_exception(exc)}", flush=True)
+        raise
     if stage_callback:
         stage_callback("exporting")
     output_dir, archive_path = save_outputs(raw, refined, record, audio_file)

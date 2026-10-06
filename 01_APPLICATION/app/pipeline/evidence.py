@@ -2,6 +2,7 @@ import difflib
 import re
 from typing import Any
 
+# Regex matching critical factual entities (currencies, numbers, percentages, dates, negations, commitments).
 _PROTECTED_TOKEN_PATTERN = re.compile(
     r"(?:"
     r"(?:US\$|CA\$|AU\$|₹|Rs\.?|INR|USD|EUR|GBP|[$€£])\s*"
@@ -22,6 +23,7 @@ _PROTECTED_TOKEN_PATTERN = re.compile(
 )
 
 
+# Extracts and normalizes protected factual tokens (numbers, currencies, dates, negations) from text.
 def protected_tokens(text: str) -> list[str]:
     return sorted(
         match.group(0).lower().replace(" ", "")
@@ -29,16 +31,19 @@ def protected_tokens(text: str) -> list[str]:
     )
 
 
+# Ensures proposed transcript edits do not modify, remove, or corrupt protected factual information.
 def safe_edit(source: str, target: str) -> tuple[bool, list[str]]:
     unchanged = protected_tokens(source) == protected_tokens(target)
     return unchanged, [] if unchanged else ["protected information changed"]
 
 
+# Normalizes a text string for fuzzy or substring matching by stripping punctuation and whitespace.
 def normalize_match(text: str) -> str:
     text = re.sub(r"[^\w₹$%.]+", " ", str(text).lower(), flags=re.UNICODE)
     return re.sub(r"\s+", " ", text).strip()
 
 
+# Locates supporting transcript segments and timestamps for an evidence quote using fuzzy matching.
 def find_evidence(
     quote: str, segments: list[dict[str, Any]], threshold: float = 0.80
 ) -> dict[str, Any]:
@@ -79,6 +84,17 @@ def find_evidence(
     return best
 
 
+# Regex matching tentative or non-committal words indicating a proposal rather than a confirmed decision.
+_PROPOSAL_INDICATOR_PATTERN = re.compile(
+    r"\b(?:suggest|suggests|suggested|suggestion|propose|proposes|proposed|proposal|"
+    r"idea|option|consider|considering|might|could|maybe|"
+    r"not made a final decision|have not made a final decision|not yet decided|"
+    r"haven't decided|has not decided|undecided|under discussion|review in next)\b",
+    re.IGNORECASE,
+)
+
+
+# Validates action item assignments, resetting ungrounded owners or deadlines to 'Unspecified'.
 def validate_action(action: dict[str, Any]) -> dict[str, Any]:
     validated = dict(action)
     validated["owner"] = str(validated.get("owner") or "Unspecified")
@@ -87,12 +103,13 @@ def validate_action(action: dict[str, Any]) -> dict[str, Any]:
     evidence_quote = normalize_match(validated.get("evidence_quote", ""))
     for field in ("owner", "deadline"):
         value = validated[field]
-        if value.lower() != "unspecified" and normalize_match(value) not in evidence_quote:
+        if value.lower() not in ("unspecified", "not specified") and normalize_match(value) not in evidence_quote:
             validated[field] = "Unspecified"
             validated["status"] = "Needs Review"
     return validated
 
 
+# Verifies that meeting decisions and actions are supported by transcript evidence and flags proposals.
 def validate_record(
     record: dict[str, Any], refined: dict[str, Any]
 ) -> dict[str, Any]:
@@ -106,12 +123,18 @@ def validate_record(
         "discussion_points": record.get("discussion_points") or [],
         "open_questions": record.get("open_questions") or [],
     }
-    segments = refined["refined_segments"]
+    segments = refined.get("refined_segments") or []
     for decision in record.get("decisions") or []:
         item = dict(decision)
         item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
         if item["evidence"]["found"]:
-            output["decisions"].append(item)
+            evidence_text = item.get("evidence_quote", "")
+            decision_text = item.get("text", "")
+            if _PROPOSAL_INDICATOR_PATTERN.search(evidence_text) or _PROPOSAL_INDICATOR_PATTERN.search(decision_text):
+                item["status"] = "Proposal / Undecided"
+                output["non_decisions"].append(item)
+            else:
+                output["decisions"].append(item)
     for proposal in record.get("non_decisions") or []:
         item = dict(proposal)
         item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)

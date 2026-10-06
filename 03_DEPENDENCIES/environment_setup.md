@@ -58,5 +58,5 @@ Open the local URL printed by Gradio, normally `http://127.0.0.1:7860`.
 ## Run tests
 
 ```bash
-python -m pytest 07_TESTS
+python -m pytest 06_TESTS
 ```

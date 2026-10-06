@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 import zipfile
 from datetime import datetime
@@ -8,6 +9,15 @@ from typing import Any
 from app.core.config import OUTPUT_DIR
 
 
+# Redacts sensitive Groq API keys and Bearer tokens from exception messages before logging or UI display.
+def sanitize_exception(exc: Any) -> str:
+    msg = str(exc)
+    msg = re.sub(r"gsk_[A-Za-z0-9_\-]+", "[REDACTED_API_KEY]", msg)
+    msg = re.sub(r"(Bearer\s+)[A-Za-z0-9_\-]+", r"\1[REDACTED_API_KEY]", msg)
+    return msg
+
+
+# Formats the structured meeting record dictionary into clean, human-readable Markdown.
 def render_markdown(record: dict[str, Any]) -> str:
     lines = [
         f"# {record.get('meeting_title') or 'Meeting'}",
@@ -43,6 +53,7 @@ def render_markdown(record: dict[str, Any]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+# Persists all meeting outputs and audio to a timestamped folder and creates a downloadable zip archive.
 def save_outputs(
     transcription: dict[str, Any],
     refined: dict[str, Any],

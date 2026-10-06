@@ -13,6 +13,7 @@ from app.core.config import (
 
 logger = logging.getLogger(__name__)
 
+# Set of supported audio file formats accepted by the pipeline.
 SUPPORTED_AUDIO_EXTENSIONS = {
     ".flac",
     ".m4a",
@@ -25,6 +26,7 @@ SUPPORTED_AUDIO_EXTENSIONS = {
 }
 
 
+# Validates that the uploaded recording exists, has an allowed format, is non-empty, and is readable.
 def validate_audio_file(file_path: str | Path) -> Path:
     path = Path(file_path)
     logger.info("Validating uploaded audio: %s", path.name)
@@ -48,6 +50,7 @@ def validate_audio_file(file_path: str | Path) -> Path:
     return path
 
 
+# Loads and caches the local Faster-Whisper model on CPU using int8 quantization.
 @lru_cache(maxsize=1)
 def get_whisper_model() -> WhisperModel:
     logger.info(
@@ -63,6 +66,20 @@ def get_whisper_model() -> WhisperModel:
     )
 
 
+# Converts a duration in seconds into a formatted HH:MM:SS or MM:SS timestamp string.
+def format_time(seconds: Any) -> str:
+    try:
+        value = max(0, float(seconds))
+    except (TypeError, ValueError):
+        return "00:00"
+    minutes, remainder = divmod(int(value), 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours:02d}:{minutes:02d}:{remainder:02d}"
+    return f"{minutes:02d}:{remainder:02d}"
+
+
+# Transcribes the validated audio file using Faster-Whisper into timestamped raw segments and full text.
 def transcribe_audio(file_path: str | Path) -> dict[str, Any]:
     logger.info("Received uploaded audio for transcription: %s", Path(file_path).name)
     path = validate_audio_file(file_path)
@@ -95,9 +112,15 @@ def transcribe_audio(file_path: str | Path) -> dict[str, Any]:
         path.name,
         len(segments),
     )
+    timestamped_lines = [
+        f"[{format_time(s['start'])} – {format_time(s['end'])}] {s['text']}"
+        for s in segments
+    ]
+    timestamped_text = "\n".join(timestamped_lines)
     return {
         "text": text,
         "segments": segments,
+        "timestamped_text": timestamped_text,
         "backend": "faster-whisper",
         "model": WHISPER_MODEL,
         "language": info.language,

@@ -3,6 +3,7 @@ from functools import lru_cache
 from app.core.config import PROMPTS_DIR
 
 
+# Reads, validates, and caches prompt text files from the 02_PROMPTS directory.
 @lru_cache(maxsize=3)
 def load_prompt(filename: str) -> str:
     prompt_path = PROMPTS_DIR / filename

@@ -7,8 +7,8 @@
 - External prompts, dependency manifest, environment example, and setup instructions.
 - Technical model/architecture descriptions and evaluator demo walkthrough.
 - Unit tests for transcript chunking and retention, protected transcript values, UI output binding, evidence, ownership/deadlines, audio validation, and pipeline stage order.
-- Existing shareable recording at `05_DEMO/recording/bootcamp_test_meeting.wav`.
-- Actual end-to-end outputs in `05_DEMO/outputs/`, generated from the included recording using local faster-whisper and both configured Groq stages.
+- Existing shareable recording at `04_DEMO/recording/bootcamp_test_meeting.wav`.
+- Actual end-to-end outputs in `04_DEMO/outputs/`, generated from the included recording using local faster-whisper and both configured Groq stages.
 
 ## Demo output status
 
@@ -16,4 +16,4 @@ The sample recording was processed through the application. The static demo outp
 
 ## Credentials and generated files
 
-Never include `.env` or real API keys. Runtime outputs are written under `01_APPLICATION/outputs/` and ignored by Git. The curated demo artifacts in `05_DEMO/outputs/` are intentionally included for review; share them only if the recording and transcript are permitted for distribution.
+Never include `.env` or real API keys. Runtime outputs are written under `01_APPLICATION/outputs/` and ignored by Git. The curated demo artifacts in `04_DEMO/outputs/` are intentionally included for review; share them only if the recording and transcript are permitted for distribution.
