@@ -49,9 +49,16 @@ def _token_encoding() -> Any:
     return tiktoken.get_encoding("o200k_base")
 
 
-# Computes the exact token count of a given string using the cached tokenizer.
+# Computes the exact token count using tiktoken with graceful fallback when tokenizer data is unavailable.
 def _token_count(text: str) -> int:
-    return len(_token_encoding().encode(text))
+    try:
+        return len(_token_encoding().encode(text))
+    except Exception as exc:
+        logger.warning(
+            "tiktoken tokenizer unavailable (%s); falling back to heuristic token count.",
+            sanitize_exception(exc),
+        )
+        return max(1, len(text) // 4)
 
 
 # Checks whether combined system and user prompts fit within Groq's maximum input token budget.

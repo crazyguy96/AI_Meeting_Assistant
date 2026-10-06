@@ -10,6 +10,26 @@ from app.core import utils
 from app.pipeline import transcription
 
 
+def create_valid_test_wav(path: Path, duration: float = 1.0, silent: bool = False) -> Path:
+    import math
+    import struct
+    sample_rate = 16000
+    num_samples = int(duration * sample_rate)
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        if silent:
+            wf.writeframes(b"\x00\x00" * num_samples)
+        else:
+            frames = bytearray()
+            for i in range(num_samples):
+                val = int(16000 * math.sin(2 * math.pi * 440.0 * i / sample_rate))
+                frames.extend(struct.pack("<h", val))
+            wf.writeframes(frames)
+    return path
+
+
 def test_unsupported_audio_file_is_rejected(tmp_path):
     path = tmp_path / "notes.txt"
     path.write_text("not audio")
@@ -25,8 +45,7 @@ def test_empty_audio_file_is_rejected(tmp_path):
 
 
 def test_faster_whisper_preserves_timestamps_and_reuses_model(tmp_path, monkeypatch):
-    audio = tmp_path / "meeting.wav"
-    audio.write_bytes(b"audio")
+    audio = create_valid_test_wav(tmp_path / "meeting.wav", duration=1.0)
     constructed = []
 
     class FakeWhisperModel:
@@ -77,12 +96,7 @@ def test_audio_decoder_accepts_pyav19_compatible_open_call(tmp_path):
 
 
 def test_transcribe_audio_accepts_real_wav_path_with_spaces(tmp_path, monkeypatch):
-    path = tmp_path / "uploaded meeting audio.wav"
-    with wave.open(str(path), "wb") as audio_file:
-        audio_file.setnchannels(1)
-        audio_file.setsampwidth(2)
-        audio_file.setframerate(16000)
-        audio_file.writeframes(b"\0\0" * 1600)
+    path = create_valid_test_wav(tmp_path / "uploaded meeting audio.wav", duration=1.0)
     received_paths = []
 
     class FakeWhisperModel:
@@ -117,8 +131,7 @@ def test_unreadable_audio_file_reports_error(tmp_path, monkeypatch):
 
 
 def test_pipeline_runs_ordered_stages_and_returns_download(monkeypatch, tmp_path):
-    audio = tmp_path / "meeting.wav"
-    audio.write_bytes(b"audio")
+    audio = create_valid_test_wav(tmp_path / "meeting.wav", duration=1.0)
     calls = []
     raw = {"text": "Raw", "segments": []}
     refined = {"refined_text": "Refined", "refined_segments": []}
@@ -228,8 +241,7 @@ def test_saved_results_include_all_submission_exports(monkeypatch, tmp_path):
 
 
 def test_pipeline_preserves_raw_distinct_from_refined_and_final_record(monkeypatch, tmp_path):
-    audio = tmp_path / "meeting.wav"
-    audio.write_bytes(b"recording")
+    audio = create_valid_test_wav(tmp_path / "meeting.wav", duration=1.0)
     raw_content = "Raw transcript words spoken by team."
     refined_content = "Refined transcript words spoken by team."
     record_content = {
@@ -421,8 +433,7 @@ def test_whisper_config_env_vars_and_cuda_detection(monkeypatch):
 
 
 def test_transcribe_audio_enables_vad_filter_and_passes_initial_prompt(tmp_path, monkeypatch):
-    audio = tmp_path / "meeting.wav"
-    audio.write_bytes(b"audio")
+    audio = create_valid_test_wav(tmp_path / "meeting.wav", duration=1.0)
     recorded_kwargs = {}
 
     class FakeWhisperModelWithKwargs:
@@ -492,8 +503,7 @@ def test_transcribe_audio_uses_configured_model_and_device(tmp_path, monkeypatch
 
 
 def test_process_meeting_passes_glossary_to_transcribe(tmp_path, monkeypatch):
-    audio = tmp_path / "meeting.wav"
-    audio.write_bytes(b"audio")
+    audio = create_valid_test_wav(tmp_path / "meeting.wav", duration=1.0)
     received_glossary = []
     raw = {"text": "Raw transcript", "segments": []}
     refined = {"refined_text": "Refined transcript", "refined_segments": []}
@@ -529,4 +539,172 @@ def test_process_meeting_passes_glossary_to_transcribe(tmp_path, monkeypatch):
     assert received_glossary == ["PostgreSQL, Celery"]
 
 
+def test_audio_validation_corrupt_audio_with_valid_extension(tmp_path):
+    path = tmp_path / "corrupt_recording.wav"
+    path.write_bytes(b"RIFF\x00\x00\x00\x00WAVEfmt corrupt header audio bytes")
+    with pytest.raises(ValueError, match="corrupt or cannot be decoded"):
+        transcription.validate_audio_file(path)
 
+
+def test_audio_validation_empty_audio_rejected(tmp_path):
+    path = tmp_path / "zero_bytes.wav"
+    path.touch()
+    with pytest.raises(ValueError, match="empty"):
+        transcription.validate_audio_file(path)
+
+
+def test_audio_validation_valid_audio_accepted(tmp_path):
+    path = create_valid_test_wav(tmp_path / "clean_valid.wav", duration=1.0)
+    result = transcription.validate_audio_file(path)
+    assert result == path
+
+
+def test_audio_validation_silent_audio_rejected(tmp_path):
+    path = create_valid_test_wav(tmp_path / "silent_audio.wav", duration=1.0, silent=True)
+    with pytest.raises(ValueError, match="completely silent or near-silent"):
+        transcription.validate_audio_file(path)
+
+
+def test_audio_validation_duration_boundary_checks(tmp_path, monkeypatch):
+    from app.core import config
+
+    short_path = create_valid_test_wav(tmp_path / "short_boundary.wav", duration=0.2)
+    monkeypatch.setattr(config, "AUDIO_MIN_DURATION_SECONDS", 1.0)
+    with pytest.raises(ValueError, match="below the minimum allowed duration"):
+        transcription.validate_audio_file(short_path)
+
+    long_path = create_valid_test_wav(tmp_path / "long_boundary.wav", duration=1.0)
+    monkeypatch.setattr(config, "AUDIO_MAX_DURATION_SECONDS", 0.5)
+    with pytest.raises(ValueError, match="exceeds the maximum allowed duration"):
+        transcription.validate_audio_file(long_path)
+
+
+def test_audio_validation_suspicious_file_size_warning(tmp_path, caplog, monkeypatch):
+    import logging
+    from app.core import config
+
+    # Configure minimum threshold above small_path size (which is ~19KB for 0.6s 16kHz wav)
+    monkeypatch.setattr(config, "AUDIO_SUSPICIOUS_MIN_SIZE_BYTES", 50000)
+    small_path = create_valid_test_wav(tmp_path / "small_recording.wav", duration=0.6)
+    with caplog.at_level(logging.WARNING):
+        result = transcription.validate_audio_file(small_path)
+    assert result == small_path
+    warnings = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("suspiciously small" in w for w in warnings)
+
+
+def test_full_pipeline_end_to_end_run(tmp_path, monkeypatch):
+    audio_path = create_valid_test_wav(tmp_path / "meeting_recording.wav", duration=1.0)
+    out_dir = tmp_path / "outputs"
+    out_dir.mkdir()
+    monkeypatch.setattr("app.core.utils.OUTPUT_DIR", out_dir)
+
+    raw_fixture = {
+        "text": "Alice: We agreed to launch the API on Friday. Bob will deploy the microservices.",
+        "segments": [
+            {"id": "S0001", "start": 0.0, "end": 4.0, "text": "Alice: We agreed to launch the API on Friday."},
+            {"id": "S0002", "start": 4.5, "end": 7.5, "text": "Bob will deploy the microservices."},
+        ],
+        "backend": "faster-whisper",
+        "language": "en",
+    }
+    refined_fixture = {
+        "refined_text": "Alice: We agreed to launch the API on Friday. Bob will deploy the microservices.",
+        "refined_segments": [
+            {"id": "S0001", "start": 0.0, "end": 4.0, "text": "Alice: We agreed to launch the API on Friday."},
+            {"id": "S0002", "start": 4.5, "end": 7.5, "text": "Bob will deploy the microservices."},
+        ],
+        "changes": [],
+    }
+    record_fixture = {
+        "meeting_title": "Sprint Launch Planning",
+        "summary": "Team agreed to launch the API on Friday.",
+        "minutes": ["Launch agreed for Friday.", "Bob assigned microservices deployment."],
+        "decisions": [
+            {
+                "text": "Launch the API on Friday",
+                "status": "Confirmed",
+                "evidence_quote": "We agreed to launch the API on Friday.",
+            }
+        ],
+        "non_decisions": [],
+        "action_items": [
+            {
+                "task": "Deploy the microservices",
+                "owner": "Bob",
+                "deadline": "Unspecified",
+                "status": "Confirmed",
+                "evidence_quote": "Bob will deploy the microservices.",
+            }
+        ],
+        "discussion_points": ["API launch readiness"],
+        "open_questions": [],
+    }
+
+    monkeypatch.setattr(main, "transcribe_audio", lambda *args, **kwargs: raw_fixture)
+    monkeypatch.setattr(main, "refine_transcription", lambda *args, **kwargs: refined_fixture)
+    monkeypatch.setattr(main, "generate_record", lambda *args, **kwargs: record_fixture)
+
+    recorded_stages = []
+    recorded_partials = []
+
+    def on_stage(stage: str):
+        recorded_stages.append(stage)
+
+    def on_partial(data: dict):
+        recorded_partials.append(data)
+
+    result = main.process_meeting(
+        audio_path=audio_path,
+        glossary="API, microservices",
+        stage_callback=on_stage,
+        partial_result_callback=on_partial,
+    )
+
+    expected_stages = [
+        "received",
+        "validated",
+        "transcribing",
+        "raw_ready",
+        "refining",
+        "refined",
+        "documenting",
+        "validating",
+        "exporting",
+        "complete",
+    ]
+    assert recorded_stages == expected_stages
+    assert len(recorded_partials) == 2
+    assert "raw_transcript" in recorded_partials[0]
+    assert "refined_transcript" in recorded_partials[1]
+
+    # Check return structure
+    assert result["raw_transcript"] == raw_fixture["text"]
+    assert result["refined_transcript"] == refined_fixture["refined_text"]
+    assert result["record"]["meeting_title"] == "Sprint Launch Planning"
+    assert len(result["record"]["decisions"]) == 1
+    assert result["record"]["decisions"][0]["status"] == "Confirmed"
+    assert result["record"]["decisions"][0]["evidence"]["found"] is True
+    assert len(result["record"]["action_items"]) == 1
+    assert result["record"]["action_items"][0]["owner"] == "Bob"
+    assert result["record"]["action_items"][0]["status"] == "Confirmed"
+
+    # Check disk outputs and archive
+    run_output_dir = Path(result["output_dir"])
+    archive_path = Path(result["archive_path"])
+    assert run_output_dir.is_dir()
+    assert (run_output_dir / "meeting_record.json").exists()
+    assert (run_output_dir / "meeting_record.md").exists()
+    assert (run_output_dir / "action_items.json").exists()
+    assert (run_output_dir / "decisions.json").exists()
+    assert archive_path.is_file()
+    assert zipfile.is_zipfile(archive_path)
+
+
+def test_pipeline_rejects_missing_or_empty_audio_input(tmp_path):
+    with pytest.raises(ValueError, match="Please upload a meeting recording"):
+        main.process_meeting("")
+
+    missing_path = tmp_path / "nonexistent.wav"
+    with pytest.raises(ValueError, match="missing or is not a file"):
+        main.process_meeting(missing_path)

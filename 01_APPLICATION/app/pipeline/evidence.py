@@ -94,18 +94,33 @@ _PROPOSAL_INDICATOR_PATTERN = re.compile(
 )
 
 
+# Allowed status values defined by the meeting documentation schema.
+ALLOWED_DECISION_STATUSES = {"Confirmed", "Needs Review"}
+ALLOWED_ACTION_STATUSES = {"Confirmed", "Needs Review"}
+
+
 # Validates action item assignments, resetting ungrounded owners or deadlines to 'Unspecified'.
-def validate_action(action: dict[str, Any]) -> dict[str, Any]:
+# Supports checking surrounding transcript context if an owner or deadline was confirmed across adjacent lines.
+def validate_action(action: dict[str, Any], context_text: str = "") -> dict[str, Any]:
     validated = dict(action)
     validated["owner"] = str(validated.get("owner") or "Unspecified")
     validated["deadline"] = str(validated.get("deadline") or "Unspecified")
-    validated["status"] = validated.get("status", "Needs Review")
+
+    # Validate action status against allowed values; normalize unsupported to "Needs Review"
+    raw_status = str(validated.get("status") or "")
+    validated["status"] = raw_status if raw_status in ALLOWED_ACTION_STATUSES else "Needs Review"
+
     evidence_quote = normalize_match(validated.get("evidence_quote", ""))
+    normalized_context = normalize_match(context_text or "")
     for field in ("owner", "deadline"):
         value = validated[field]
-        if value.lower() not in ("unspecified", "not specified") and normalize_match(value) not in evidence_quote:
-            validated[field] = "Unspecified"
-            validated["status"] = "Needs Review"
+        if value.lower() not in ("unspecified", "not specified"):
+            norm_val = normalize_match(value)
+            in_quote = bool(norm_val and norm_val in evidence_quote)
+            in_context = bool(norm_val and normalized_context and norm_val in normalized_context)
+            if not (in_quote or in_context):
+                validated[field] = "Unspecified"
+                validated["status"] = "Needs Review"
     return validated
 
 
@@ -126,6 +141,9 @@ def validate_record(
     segments = refined.get("refined_segments") or []
     for decision in record.get("decisions") or []:
         item = dict(decision)
+        raw_status = str(item.get("status") or "")
+        item["status"] = raw_status if raw_status in ALLOWED_DECISION_STATUSES else "Needs Review"
+
         item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
         if item["evidence"]["found"]:
             evidence_text = item.get("evidence_quote", "")
@@ -135,13 +153,27 @@ def validate_record(
                 output["non_decisions"].append(item)
             else:
                 output["decisions"].append(item)
+        else:
+            # Never silently discard a decision when evidence cannot be verified;
+            # keep it in the final record as "Needs Review" to make validation auditable.
+            item["status"] = "Needs Review"
+            output["decisions"].append(item)
     for proposal in record.get("non_decisions") or []:
         item = dict(proposal)
         item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
         output["non_decisions"].append(item)
     for action in record.get("action_items") or []:
-        item = validate_action(action)
-        item["evidence"] = find_evidence(item.get("evidence_quote", ""), segments)
+        evidence = find_evidence(action.get("evidence_quote", ""), segments)
+        context_text = ""
+        if evidence["found"]:
+            matched_ids = set(evidence.get("segment_ids", []))
+            indices = [i for i, seg in enumerate(segments) if seg.get("id") in matched_ids]
+            if indices:
+                min_idx = max(0, min(indices) - 2)
+                max_idx = min(len(segments), max(indices) + 3)
+                context_text = " ".join(seg.get("text", "") for seg in segments[min_idx:max_idx])
+        item = validate_action(action, context_text=context_text)
+        item["evidence"] = evidence
         if not item["evidence"]["found"]:
             item["status"] = "Needs Review"
             item["owner"] = "Unspecified"

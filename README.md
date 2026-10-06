@@ -59,7 +59,7 @@ The Gradio interface will start locally.
 pytest 06_TESTS
 ```
 
-**Current verification: 43 tests passing.**
+**Current verification: 74 tests passing.**
 
 ---
 
@@ -462,19 +462,18 @@ This makes the pipeline easier to inspect and helps identify where an error was 
 AI_Meeting_Assistant/
 │
 ├── 01_APPLICATION/
-│   ├── app/
-│   │   ├── core/
-│   │   │   ├── clients.py
-│   │   │   ├── config.py
-│   │   │   └── utils.py
-│   │   ├── pipeline/
-│   │   │   ├── transcription.py
-│   │   │   ├── refinement.py
-│   │   │   ├── documentation.py
-│   │   │   └── evidence.py
-│   │   └── ui/
-│   │       └── gradio_app.py
-│   └── run.py
+│   └── app/
+│       ├── core/
+│       │   ├── clients.py
+│       │   ├── config.py
+│       │   └── utils.py
+│       ├── pipeline/
+│       │   ├── transcription.py
+│       │   ├── refinement.py
+│       │   ├── documentation.py
+│       │   └── evidence.py
+│       └── ui/
+│           └── gradio_app.py
 │
 ├── 02_PROMPTS/
 │   ├── glossary_prompt.txt

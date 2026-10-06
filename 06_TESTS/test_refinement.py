@@ -400,3 +400,109 @@ def test_refinement_logs_stage_error_and_raises(capsys, monkeypatch):
     assert "gsk_supersecretkey" not in captured.out
     assert "[REDACTED_API_KEY]" in captured.out
 
+
+def test_token_count_uses_tiktoken_when_available(monkeypatch):
+    called = []
+    real_encoding = refinement._token_encoding()
+
+    class SpyEncoding:
+        def encode(self, text):
+            called.append(text)
+            return real_encoding.encode(text)
+
+    refinement._token_encoding.cache_clear()
+    monkeypatch.setattr(refinement, "_token_encoding", lambda: SpyEncoding())
+    sample_text = "The quick brown fox jumps over the lazy dog."
+    count = refinement._token_count(sample_text)
+    assert len(called) == 1
+    assert called[0] == sample_text
+    assert count == len(real_encoding.encode(sample_text))
+    # Also verify that with actual tiktoken, it matches true token length
+    # rather than fallback len // 4
+    # "The quick brown fox jumps over the lazy dog." has length 44 -> len // 4 = 11, but 10 tokens
+    assert len(sample_text) // 4 != count
+
+
+def test_token_count_uses_fallback_when_tiktoken_fails(monkeypatch, caplog):
+    refinement._token_encoding.cache_clear()
+
+    def failing_encoding():
+        raise RuntimeError("network failure: unable to download tokenizer data")
+
+    monkeypatch.setattr(refinement, "_token_encoding", failing_encoding)
+
+    import logging
+    with caplog.at_level(logging.WARNING):
+        count = refinement._token_count("Testing fallback when tiktoken is unavailable.")
+
+    # Does not crash, returns valid integer count
+    assert isinstance(count, int)
+    assert count > 0
+
+    # Warning is logged
+    warnings = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("tiktoken tokenizer unavailable" in w for w in warnings)
+
+    # Secrets are not leaked in log
+    for r in caplog.records:
+        assert "Testing fallback when tiktoken is unavailable." not in r.message
+
+
+import pytest
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "",
+        "a",
+        "abc",
+        "abcd",
+        "12345678",
+        "The quick brown fox jumps over the lazy dog.",
+        "Short",
+        "A somewhat longer sample transcript text meant to verify mathematical correctness of fallback.",
+    ],
+)
+def test_token_count_fallback_returns_max_1_len_div_4(monkeypatch, text):
+    refinement._token_encoding.cache_clear()
+    monkeypatch.setattr(
+        refinement,
+        "_token_encoding",
+        lambda: (_ for _ in ()).throw(RuntimeError("offline network")),
+    )
+
+    expected = max(1, len(text) // 4)
+    actual = refinement._token_count(text)
+    assert actual == expected
+
+
+def test_long_transcript_chunking_works_when_tiktoken_unavailable(monkeypatch):
+    refinement._token_encoding.cache_clear()
+    monkeypatch.setattr(
+        refinement,
+        "_token_encoding",
+        lambda: (_ for _ in ()).throw(RuntimeError("restricted network: no tokenizer data")),
+    )
+
+    long_transcript = "This is a recurring meeting status update covering deliverables and blockers. " * 200
+    system_prompt = "You are an expert meeting transcription refinement system."
+    make_prompt = lambda text: "Extract terminology:\n" + text
+
+    # Verifies _split_text succeeds and creates multiple chunks without crashing
+    chunks = refinement._split_text(long_transcript, system_prompt, make_prompt)
+    assert len(chunks) > 1
+    assert "".join(chunks) == long_transcript
+
+    # Verifies _chunk_segments also works end-to-end
+    segments = [
+        {"id": f"S{i:04d}", "start": float(i), "end": float(i + 1), "text": f"Segment line {i} text."}
+        for i in range(100)
+    ]
+    batches = refinement._chunk_segments(
+        segments,
+        system_prompt,
+        lambda segs: "Refine:\n" + str(segs),
+    )
+    assert len(batches) >= 1
+    reconstructed_segments = [s for b in batches for s in b]
+    assert len(reconstructed_segments) == len(segments)
