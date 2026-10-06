@@ -40,3 +40,34 @@ def test_negation_will_not_deploy_regression():
     assert not safe
     assert "protected information changed" in reasons
 
+
+def test_existing_names_are_preserved():
+    source = "Asha will send the report to Rahul."
+    modified = "Asha will send the report to Rahul."
+    safe, reasons = safe_edit(source, modified)
+    assert safe
+    assert reasons == []
+
+
+def test_unsupported_name_expansion_is_rejected():
+    source = "Sue will take care of deployment."
+    modified = "Sue Carpenter will take care of deployment."
+    safe, reasons = safe_edit(source, modified)
+    assert not safe
+    assert "unsupported name change" in reasons
+
+
+def test_unsupported_name_deletion_is_rejected():
+    source = "Mark Robert confirmed the release date."
+    modified = "Mark confirmed the release date."
+    safe, reasons = safe_edit(source, modified)
+    assert not safe
+    assert "unsupported name change" in reasons
+
+
+def test_supported_name_expansion_with_glossary_is_accepted():
+    source = "Sue will take care of deployment."
+    modified = "Sue Carpenter will take care of deployment."
+    safe, reasons = safe_edit(source, modified, glossary=["Sue Carpenter"])
+    assert safe
+    assert reasons == []

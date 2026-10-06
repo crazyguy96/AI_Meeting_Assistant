@@ -254,3 +254,57 @@ def test_action_owner_spoken_in_adjacent_segment_is_retained():
     assert action["status"] == "Confirmed"
 
 
+def test_first_person_commitment_sets_owner_note():
+    action = {
+        "task": "Send the deck",
+        "owner": "Unspecified",
+        "deadline": "Friday",
+        "status": "Confirmed",
+        "evidence_quote": "I'll send it by Friday.",
+    }
+    validated = validate_action(action)
+    assert validated["owner"] == "Unspecified"
+    assert validated["deadline"] == "Friday"
+    assert validated["owner_note"] == "First-person commitment; speaker identity unavailable."
+
+
+def test_cross_section_duplicates_handled_correctly():
+    refined = {
+        "refined_segments": [
+            {"id": "S1", "start": 0.0, "text": "We agreed to adopt PostgreSQL 16."},
+            {"id": "S2", "start": 5.0, "text": "Bob will deploy PostgreSQL 16 by Friday."},
+        ]
+    }
+    source = {
+        "decisions": [
+            {
+                "text": "Adopt PostgreSQL 16",
+                "status": "Confirmed",
+                "evidence_quote": "We agreed to adopt PostgreSQL 16.",
+            }
+        ],
+        "action_items": [
+            # 1. Unassigned verbatim duplicate of the decision -> should be dropped
+            {
+                "task": "Adopt PostgreSQL 16",
+                "owner": "Unspecified",
+                "deadline": "Unspecified",
+                "status": "Confirmed",
+                "evidence_quote": "We agreed to adopt PostgreSQL 16.",
+            },
+            # 2. Assigned implementation work -> should be preserved
+            {
+                "task": "Deploy PostgreSQL 16",
+                "owner": "Bob",
+                "deadline": "Friday",
+                "status": "Confirmed",
+                "evidence_quote": "Bob will deploy PostgreSQL 16 by Friday.",
+            },
+        ],
+    }
+    validated = validate_record(source, refined)
+    assert len(validated["decisions"]) == 1
+    assert validated["decisions"][0]["text"] == "Adopt PostgreSQL 16"
+    assert len(validated["action_items"]) == 1
+    assert validated["action_items"][0]["task"] == "Deploy PostgreSQL 16"
+    assert validated["action_items"][0]["owner"] == "Bob"

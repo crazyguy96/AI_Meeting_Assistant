@@ -23,6 +23,28 @@ _PROTECTED_TOKEN_PATTERN = re.compile(
 )
 
 
+# Common non-name words that may appear capitalized (sentence starters, days, months, common nouns).
+_COMMON_NON_NAME_WORDS = {
+    "the", "a", "an", "we", "i", "it", "they", "this", "that", "these", "those",
+    "there", "here", "what", "which", "who", "when", "where", "why", "how",
+    "all", "any", "both", "each", "few", "more", "most", "other", "some", "such",
+    "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very",
+    "can", "will", "just", "should", "now", "our", "my", "your", "his", "her",
+    "its", "their", "monday", "tuesday", "wednesday", "thursday", "friday",
+    "saturday", "sunday", "january", "february", "march", "april", "may",
+    "june", "july", "august", "september", "october", "november", "december",
+    "ok", "okay", "yes", "yeah", "sure", "hello", "hi", "hey", "bye", "good",
+    "morning", "afternoon", "evening", "thanks", "thank", "please", "meeting",
+    "today", "tomorrow", "yesterday", "next", "last", "first", "second",
+    "budget", "cost", "revenue", "estimate", "team", "launch", "model",
+}
+
+
+def _extract_name_tokens(text: str) -> list[str]:
+    tokens = re.findall(r"\b[A-Z][a-z]+\b", str(text))
+    return [t for t in tokens if t.lower() not in _COMMON_NON_NAME_WORDS]
+
+
 # Extracts and normalizes protected factual tokens (numbers, currencies, dates, negations) from text.
 def protected_tokens(text: str) -> list[str]:
     return sorted(
@@ -31,10 +53,52 @@ def protected_tokens(text: str) -> list[str]:
     )
 
 
-# Ensures proposed transcript edits do not modify, remove, or corrupt protected factual information.
-def safe_edit(source: str, target: str) -> tuple[bool, list[str]]:
-    unchanged = protected_tokens(source) == protected_tokens(target)
-    return unchanged, [] if unchanged else ["protected information changed"]
+# Ensures proposed transcript edits do not modify, remove, or corrupt protected factual information or names.
+def safe_edit(
+    source: str, target: str, glossary: list[str] | None = None
+) -> tuple[bool, list[str]]:
+    reasons: list[str] = []
+    if protected_tokens(source) != protected_tokens(target):
+        reasons.append("protected information changed")
+
+    # Name protection: prevent unsupported name expansion or deletion
+    glossary_tokens: set[str] = set()
+    if glossary:
+        for g_item in glossary:
+            for g_tok in re.findall(r"\b\w+\b", str(g_item).lower()):
+                glossary_tokens.add(g_tok)
+
+    src_words = [w.lower() for w in re.findall(r"\b\w+\b", str(source))]
+    tgt_words = [w.lower() for w in re.findall(r"\b\w+\b", str(target))]
+
+    src_names = _extract_name_tokens(source)
+    tgt_names = _extract_name_tokens(target)
+
+    # 1. Unsupported name expansion: new capitalized name in target that wasn't in source
+    for t_name in tgt_names:
+        t_low = t_name.lower()
+        if not any(
+            sw == t_low or difflib.SequenceMatcher(None, sw, t_low).ratio() >= 0.85
+            for sw in src_words
+        ):
+            if t_low not in glossary_tokens:
+                reasons.append("unsupported name change")
+                break
+
+    # 2. Unsupported name deletion: capitalized name in source deleted from target
+    if "unsupported name change" not in reasons:
+        for s_name in src_names:
+            s_low = s_name.lower()
+            if not any(
+                tw == s_low or difflib.SequenceMatcher(None, tw, s_low).ratio() >= 0.85
+                for tw in tgt_words
+            ):
+                if s_low not in glossary_tokens:
+                    reasons.append("unsupported name change")
+                    break
+
+    safe = len(reasons) == 0
+    return safe, reasons
 
 
 # Normalizes a text string for fuzzy or substring matching by stripping punctuation and whitespace.
@@ -99,6 +163,13 @@ ALLOWED_DECISION_STATUSES = {"Confirmed", "Needs Review"}
 ALLOWED_ACTION_STATUSES = {"Confirmed", "Needs Review"}
 
 
+_FIRST_PERSON_COMMITMENT_PATTERN = re.compile(
+    r"\b(?:i'll|i will|i can|i shall|i'm going to|i am going to|"
+    r"i've committed|i commit|i'd be happy to|i plan to)\b",
+    re.IGNORECASE,
+)
+
+
 # Validates action item assignments, resetting ungrounded owners or deadlines to 'Unspecified'.
 # Supports checking surrounding transcript context if an owner or deadline was confirmed across adjacent lines.
 def validate_action(action: dict[str, Any], context_text: str = "") -> dict[str, Any]:
@@ -121,6 +192,18 @@ def validate_action(action: dict[str, Any], context_text: str = "") -> dict[str,
             if not (in_quote or in_context):
                 validated[field] = "Unspecified"
                 validated["status"] = "Needs Review"
+
+    # Action owner note for first-person commitments without acoustic speaker identification
+    if validated["owner"] == "Unspecified":
+        quote_text = validated.get("evidence_quote", "")
+        task_text = validated.get("task", "")
+        if (
+            _FIRST_PERSON_COMMITMENT_PATTERN.search(quote_text)
+            or _FIRST_PERSON_COMMITMENT_PATTERN.search(task_text)
+            or _FIRST_PERSON_COMMITMENT_PATTERN.search(context_text)
+        ):
+            validated["owner_note"] = "First-person commitment; speaker identity unavailable."
+
     return validated
 
 
@@ -179,4 +262,26 @@ def validate_record(
             item["owner"] = "Unspecified"
             item["deadline"] = "Unspecified"
         output["action_items"].append(item)
+
+    # Cross-section deduplication: avoid representing the exact same statement redundantly
+    # in both decisions and action_items
+    deduped_actions: list[dict[str, Any]] = []
+    decision_texts = {
+        normalize_match(d.get("text", "")): d
+        for d in output["decisions"]
+    }
+    for action in output["action_items"]:
+        task_norm = normalize_match(action.get("task", ""))
+        matching_dec = decision_texts.get(task_norm)
+        if matching_dec:
+            # If the action has NO assigned work (owner and deadline both Unspecified),
+            # it is an unassigned duplicate statement of the confirmed decision.
+            if (
+                action.get("owner") == "Unspecified"
+                and action.get("deadline") == "Unspecified"
+            ):
+                continue
+        deduped_actions.append(action)
+    output["action_items"] = deduped_actions
+
     return output

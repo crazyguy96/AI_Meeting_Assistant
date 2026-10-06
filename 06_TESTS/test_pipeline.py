@@ -708,3 +708,160 @@ def test_pipeline_rejects_missing_or_empty_audio_input(tmp_path):
     missing_path = tmp_path / "nonexistent.wav"
     with pytest.raises(ValueError, match="missing or is not a file"):
         main.process_meeting(missing_path)
+
+
+def test_merge_records_near_duplicate_decisions():
+    from app.pipeline.documentation import merge_records
+
+    chunk1 = {
+        "decisions": [
+            {
+                "text": "Launch API on Friday",
+                "status": "Confirmed",
+                "evidence_quote": "We will launch API on Friday.",
+            }
+        ]
+    }
+    chunk2 = {
+        "decisions": [
+            # Near-duplicate of chunk1
+            {
+                "text": "Launch the new API on Friday",
+                "status": "Confirmed",
+                "evidence_quote": "We will launch the new API on Friday.",
+            },
+            # Genuinely different decision with different date
+            {
+                "text": "Launch the new API on Monday",
+                "status": "Confirmed",
+                "evidence_quote": "We will launch the new API on Monday.",
+            },
+        ]
+    }
+
+    merged = merge_records([chunk1, chunk2])
+    # The near-duplicate was merged, and the different-date decision remained separate
+    assert len(merged["decisions"]) == 2
+    texts = [d["text"] for d in merged["decisions"]]
+    assert any("Friday" in t for t in texts)
+    assert any("Monday" in t for t in texts)
+
+
+def test_merge_records_near_duplicate_actions():
+    from app.pipeline.documentation import merge_records
+
+    chunk1 = {
+        "action_items": [
+            {
+                "task": "Deploy microservices",
+                "owner": "Unspecified",
+                "deadline": "Friday",
+                "status": "Confirmed",
+                "evidence_quote": "Deploy by Friday.",
+            }
+        ]
+    }
+    chunk2 = {
+        "action_items": [
+            # Near duplicate with more complete information (owner Bob)
+            {
+                "task": "Deploy the microservices",
+                "owner": "Bob",
+                "deadline": "Friday",
+                "status": "Confirmed",
+                "evidence_quote": "Bob will deploy the microservices by Friday.",
+            },
+            # Different action assigned to Alice
+            {
+                "task": "Deploy the microservices",
+                "owner": "Alice",
+                "deadline": "Friday",
+                "status": "Confirmed",
+                "evidence_quote": "Alice will deploy the microservices by Friday.",
+            },
+        ]
+    }
+
+    merged = merge_records([chunk1, chunk2])
+    # Bob's item merged with chunk1's Unspecified item, while Alice's item remains separate
+    assert len(merged["action_items"]) == 2
+    owners = {a["owner"] for a in merged["action_items"]}
+    assert owners == {"Bob", "Alice"}
+
+
+def test_merge_records_splits_semicolon_minutes():
+    from app.pipeline.documentation import merge_records
+
+    chunk = {
+        "minutes": [
+            "Reviewed latency metrics; approved Q4 database migration; finalized security review"
+        ]
+    }
+    merged = merge_records([chunk])
+    assert len(merged["minutes"]) == 3
+    assert merged["minutes"][0] == "Reviewed latency metrics"
+    assert merged["minutes"][1] == "approved Q4 database migration"
+    assert merged["minutes"][2] == "finalized security review"
+
+
+def test_cross_chunk_context_recovery_in_generate_record(monkeypatch):
+    from app.pipeline import documentation
+
+    # Mock groq_json to inspect user prompts and return mock records
+    recorded_prompts = []
+
+    def fake_groq_json(system_prompt, user_prompt, model, **kwargs):
+        recorded_prompts.append(user_prompt)
+        if "Part two" in user_prompt:
+            return {
+                "meeting_title": "Project Sync",
+                "summary": "Team agreed to deploy.",
+                "minutes": ["Deployment agreed."],
+                "decisions": [{"text": "Deploy service", "status": "Confirmed", "evidence_quote": "Deploy service"}],
+                "non_decisions": [],
+                "action_items": [
+                    {
+                        "task": "Finalize database migration",
+                        "owner": "Unspecified",
+                        "deadline": "Friday",
+                        "status": "Confirmed",
+                        "evidence_quote": "I'll finalize it by Friday.",
+                    }
+                ],
+                "discussion_points": [],
+                "open_questions": [],
+            }
+        return {
+            "meeting_title": "Project Sync",
+            "summary": "First part of discussion.",
+            "minutes": ["Opening points."],
+            "decisions": [],
+            "non_decisions": [],
+            "action_items": [],
+            "discussion_points": [],
+            "open_questions": [],
+        }
+
+    monkeypatch.setattr(documentation, "groq_json", fake_groq_json)
+
+    # Force chunking by making fits_fn tight
+    orig_split = documentation._split_text
+    monkeypatch.setattr(
+        documentation,
+        "_split_text",
+        lambda text, sp, mp, fits_fn=None: [
+            "Part one discussion: Alice asked who will handle database migration.",
+            "Part two discussion: Speaker said I'll finalize it by Friday.",
+        ],
+    )
+
+    refined = {"refined_text": "Part one... Part two..."}
+    record = documentation.generate_record(refined)
+
+    # Chunk 2 prompt received preceding dialogue context from chunk 1
+    assert len(recorded_prompts) == 2
+    assert "Preceding dialogue context" in recorded_prompts[1]
+    assert "Alice asked who will handle database migration" in recorded_prompts[1]
+    # Final record recovered the action item with context
+    assert len(record["action_items"]) == 1
+    assert record["action_items"][0]["deadline"] == "Friday"

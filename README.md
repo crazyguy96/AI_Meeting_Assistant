@@ -59,7 +59,7 @@ The Gradio interface will start locally.
 pytest 06_TESTS
 ```
 
-**Current verification: 74 tests passing.**
+**Current verification: 88 tests passing.**
 
 ---
 

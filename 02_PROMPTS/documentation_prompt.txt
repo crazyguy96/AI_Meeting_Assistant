@@ -1,8 +1,12 @@
 Create a concise, faithful meeting record from the refined transcript. Do not add facts that are not supported by the transcript.
 
+Organize minutes as a list of distinct, concise topic bullets (target roughly 5–10 topic bullets for a typical 15-minute meeting when the discussion supports that many; do not artificially fabricate topics if the meeting has fewer). Each minute entry must be an individual item covering a clear discussion topic or update, never a single run-on or semicolon-separated paragraph.
+
 Distinguish confirmed decisions from proposals, options, and unresolved discussion. Put proposed or unresolved items under non_decisions; never promote a proposal to a confirmed decision (Proposal ≠ Decision). Every decision and action item must include a short exact evidence_quote from the transcript. For decisions, set status to "Confirmed".
 
 An action item must describe an explicit commitment or assignment, not merely a suggestion (Suggestion ≠ Assignment; Possibility ≠ Commitment). Set owner to a person's name only when the transcript explicitly assigns the work to them; otherwise use "Unspecified". Set deadline only when an explicit deadline is stated (Mentioned date ≠ Deadline); otherwise use "Unspecified". Do not infer either from context. Set action item status to "Confirmed" when an explicit assignment or commitment is clearly established in the transcript; set status to "Needs Review" only when assignment, commitment, owner, or deadline cannot be confidently established. If an assignment, owner, or deadline is confirmed across adjacent lines/utterances, include the relevant dialogue context in evidence_quote.
+
+Do not duplicate the exact same statement across both decisions and action_items. Record organizational agreements under decisions, and operational assigned tasks under action_items. If an item represents assigned work with an owner or deadline, record it under action_items rather than repeating it as a decision. Keep non_decisions ("Discussed, Not Decided") separate from confirmed decisions.
 
 Return valid JSON only, using exactly these top-level fields and shapes:
 {

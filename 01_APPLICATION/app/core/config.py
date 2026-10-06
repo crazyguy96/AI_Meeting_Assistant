@@ -64,6 +64,12 @@ AUDIO_SILENCE_THRESHOLD = float(os.getenv("AUDIO_SILENCE_THRESHOLD", "0.001"))
 AUDIO_SUSPICIOUS_MIN_SIZE_BYTES = int(os.getenv("AUDIO_SUSPICIOUS_MIN_SIZE_BYTES", "1024"))
 AUDIO_SUSPICIOUS_MAX_SIZE_BYTES = int(os.getenv("AUDIO_SUSPICIOUS_MAX_SIZE_BYTES", str(500 * 1024 * 1024)))
 
+# Documentation token budgets and cross-chunk context
+DOCUMENTATION_MAX_INPUT_TOKENS = int(os.getenv("DOCUMENTATION_MAX_INPUT_TOKENS", "2600"))
+DOCUMENTATION_MAX_OUTPUT_TOKENS = int(os.getenv("DOCUMENTATION_MAX_OUTPUT_TOKENS", "2048"))
+DOCUMENTATION_CHUNK_OVERLAP_WORDS = int(os.getenv("DOCUMENTATION_CHUNK_OVERLAP_WORDS", "200"))
+
+
 
 # Retrieves a required API key from environment variables or raises an informative error.
 def require_api_key(name: str) -> str:

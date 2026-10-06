@@ -92,7 +92,15 @@ def save_outputs(
         render_markdown(record), encoding="utf-8"
     )
     audit = {
-        key: refined.get(key, [])
+        key: (
+            [
+                e
+                for e in refined.get(key, [])
+                if not (isinstance(e, dict) and str(e.get("from", "")).strip() == str(e.get("to", "")).strip())
+            ]
+            if key in ("proposed_edits", "applied_edits", "rejected_edits")
+            else refined.get(key, [])
+        )
         for key in ("glossary", "proposed_edits", "applied_edits", "rejected_edits")
     }
     (run_dir / "refinement_audit.json").write_text(

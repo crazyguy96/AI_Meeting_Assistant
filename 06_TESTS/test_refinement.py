@@ -506,3 +506,74 @@ def test_long_transcript_chunking_works_when_tiktoken_unavailable(monkeypatch):
     assert len(batches) >= 1
     reconstructed_segments = [s for b in batches for s in b]
     assert len(reconstructed_segments) == len(segments)
+
+
+def test_chunking_prefers_paragraph_boundary():
+    # Construct text with paragraphs where first paragraph boundary is within limit
+    text = "Paragraph one discussion.\n\nParagraph two discussion with more details.\n\nParagraph three."
+    system_prompt = "Prompt"
+    # Set tight limit allowing ~35 chars
+    def custom_fits(sys_p, user_p):
+        return len(user_p) <= 40
+
+    chunks = refinement._split_text(text, system_prompt, lambda c: c, fits_fn=custom_fits)
+    assert len(chunks) > 1
+    assert "".join(chunks) == text
+    # First chunk ends with paragraph break
+    assert chunks[0] == "Paragraph one discussion.\n\n"
+
+
+def test_chunking_prefers_sentence_boundary_over_whitespace():
+    # Construct single paragraph with two sentences
+    text = "First short sentence. Second short sentence with many words."
+    system_prompt = "Prompt"
+    # Fits up to 30 chars
+    def custom_fits(sys_p, user_p):
+        return len(user_p) <= 30
+
+    chunks = refinement._split_text(text, system_prompt, lambda c: c, fits_fn=custom_fits)
+    assert len(chunks) > 1
+    assert "".join(chunks) == text
+    # First chunk must end after the first sentence
+    assert chunks[0] == "First short sentence. "
+
+
+def test_chunking_falls_back_to_whitespace_boundary():
+    # Long sentence without punctuation
+    text = "wordone wordtwo wordthree wordfour wordfive wordsix"
+    system_prompt = "Prompt"
+    def custom_fits(sys_p, user_p):
+        return len(user_p) <= 25
+
+    chunks = refinement._split_text(text, system_prompt, lambda c: c, fits_fn=custom_fits)
+    assert len(chunks) > 1
+    assert "".join(chunks) == text
+    # Splits on whitespace without corrupting words
+    assert all(not c.startswith(" ") or i == 0 for i, c in enumerate(chunks))
+
+
+def test_noop_refinement_edits_are_filtered(monkeypatch):
+    transcription = {
+        "text": "We need to fix kuberneties.",
+        "segments": [{"id": "S0001", "start": 0.0, "end": 2.0, "text": "We need to fix kuberneties."}],
+    }
+    fake_response = {
+        "edits": [
+            # Valid real edit
+            {"segment_id": "S0001", "from": "kuberneties", "to": "Kubernetes", "confidence": 0.95},
+            # No-op edit where from == to
+            {"segment_id": "S0001", "from": "We need to fix", "to": "We need to fix", "confidence": 0.99},
+            # No-op edit with whitespace differences
+            {"segment_id": "S0001", "from": "fix", "to": "fix", "confidence": 0.99},
+        ]
+    }
+    monkeypatch.setattr(refinement, "groq_json", lambda *args, **kwargs: fake_response)
+    result = refinement.refine_transcription(transcription)
+
+    assert result["refined_text"] == "We need to fix Kubernetes."
+    # Only the genuine non-noop edit is recorded
+    assert len(result["applied_edits"]) == 1
+    assert result["applied_edits"][0]["from"] == "kuberneties"
+    assert result["applied_edits"][0]["to"] == "Kubernetes"
+    assert len(result["proposed_edits"]) == 1
+    assert not any(e["from"] == e["to"] for e in result["proposed_edits"])

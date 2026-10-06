@@ -71,13 +71,50 @@ def _fits_prompt(system_prompt: str, user_prompt: str) -> bool:
     )
 
 
-# Splits a long text on word boundaries into token-safe chunks before sending them to Groq.
+def find_split_boundary(text: str, start: int, best: int) -> int:
+    """Finds the best split boundary in text[start:best], preferring:
+    1. paragraph boundary (\\n\\n)
+    2. sentence boundary (. ! ?)
+    3. whitespace/word boundary
+    Never split a sentence when a safe paragraph/sentence boundary exists.
+    """
+    if best >= len(text):
+        return best
+
+    # 1. Paragraph boundary (\\n\\n)
+    p_boundary = text.rfind("\n\n", start, best)
+    if p_boundary > start:
+        return p_boundary + 2
+
+    # 2. Sentence boundary (. ! ?) followed by whitespace, newline, or end
+    sentence_matches = [
+        m.end()
+        for m in re.finditer(r"[.!?]+(?=[\s\n]|$)", text[start:best])
+    ]
+    if sentence_matches:
+        s_boundary = start + sentence_matches[-1]
+        while s_boundary < best and text[s_boundary] in " \t\r\n":
+            s_boundary += 1
+        if s_boundary > start:
+            return s_boundary
+
+    # 3. Whitespace / word boundary
+    w_boundary = text.rfind(" ", start, best)
+    if w_boundary > start:
+        return w_boundary + 1
+
+    return best
+
+
+# Splits a long text on structure-aware boundaries into token-safe chunks before sending them to Groq.
 def _split_text(
     text: str,
     system_prompt: str,
     make_prompt: Callable[[str], str],
+    fits_fn: Callable[[str, str], bool] | None = None,
 ) -> list[str]:
-    if _fits_prompt(system_prompt, make_prompt(text)):
+    is_fitting = fits_fn or _fits_prompt
+    if is_fitting(system_prompt, make_prompt(text)):
         return [text]
 
     chunks: list[str] = []
@@ -87,7 +124,7 @@ def _split_text(
         best = start
         while low <= high:
             end = (low + high) // 2
-            if _fits_prompt(system_prompt, make_prompt(text[start:end])):
+            if is_fitting(system_prompt, make_prompt(text[start:end])):
                 best = end
                 low = end + 1
             else:
@@ -97,9 +134,9 @@ def _split_text(
                 "A transcript character cannot fit within the configured Groq token budget."
             )
         if best < len(text):
-            boundary = text.rfind(" ", start, best)
+            boundary = find_split_boundary(text, start, best)
             if boundary > start:
-                best = boundary + 1
+                best = boundary
         chunks.append(text[start:best])
         start = best
     if "".join(chunks) != text:
@@ -450,11 +487,14 @@ def refine_transcription(
             print(f"[ERROR] exception={sanitize_exception(exc)}", flush=True)
             raise
         for edit in result.get("edits", []):
-            proposed_edits.append(edit)
             source = str(edit.get("from", ""))
             target = str(edit.get("to", ""))
+            # Filter out no-op edits where source and target are identical or empty
+            if not source or not target or source.strip() == target.strip():
+                continue
+            proposed_edits.append(edit)
             confidence = float(edit.get("confidence", 0))
-            safe, reasons = safe_edit(source, target)
+            safe, reasons = safe_edit(source, target, glossary=glossary)
             if not safe or confidence < 0.75:
                 rejected.append(
                     {**edit, "reasons": reasons or ["low confidence"]}
