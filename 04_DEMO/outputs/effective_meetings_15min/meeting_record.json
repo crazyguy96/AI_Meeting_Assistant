@@ -1,0 +1,177 @@
+{
+  "meeting_title": "Monthly Team Meeting",
+  "summary": "Apologies received, new member introduced, parking priority discussed, staff morale concerns raised, IT and financial updates reviewed, general housekeeping noted.",
+  "minutes": [
+    "Apologies from Frank, Gary, Karl, Joey, Clive, Janet; new HR manager Julian introduced; parking priority decision to allocate two spaces to sales, three to visitors, and two remaining for management; staff morale issues identified but no resolution; IT backup issue noted; financial report reviewed; housekeeping concerns mentioned."
+  ],
+  "decisions": [
+    {
+      "text": "Allocate two parking spaces to sales team, three to visitors, and two remaining for management",
+      "status": "Confirmed",
+      "evidence_quote": "So we all agree that we send a list to all staff, advising them about the priority parking.",
+      "evidence": {
+        "found": true,
+        "timestamp": 294.56,
+        "segment_ids": [
+          "S0077",
+          "S0078",
+          "S0079"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "text": "Send a list to all staff advising them about the priority parking",
+      "status": "Confirmed",
+      "evidence_quote": "So we all agree that we send a list to all staff, advising them about the priority parking.",
+      "evidence": {
+        "found": true,
+        "timestamp": 294.56,
+        "segment_ids": [
+          "S0077",
+          "S0078",
+          "S0079"
+        ],
+        "score": 1.0
+      }
+    }
+  ],
+  "non_decisions": [
+    {
+      "text": "Discuss staff morale issues and potential team-building activities",
+      "evidence_quote": "We need to be working a little harder to get people on side.",
+      "evidence": {
+        "found": true,
+        "timestamp": 501.0,
+        "segment_ids": [
+          "S0139",
+          "S0140",
+          "S0141"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "text": "Plan a separate meeting to tackle staff morale issues",
+      "evidence_quote": "I think it might be a good idea if you and I had a separate meeting about that.",
+      "evidence": {
+        "found": true,
+        "timestamp": 532.6,
+        "segment_ids": [
+          "S0150",
+          "S0151",
+          "S0152"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "text": "Decide on team-building activities via staff vote",
+      "evidence_quote": "We could have an awards night. Some sort of evening to boost morale.",
+      "evidence": {
+        "found": true,
+        "timestamp": 555.76,
+        "segment_ids": [
+          "S0158",
+          "S0159",
+          "S0160"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "text": "Schedule IT backup review meeting with Clive and Frank",
+      "evidence_quote": "I want to run it past Clive first. Maybe we could save that for the next meeting?",
+      "evidence": {
+        "found": true,
+        "timestamp": 726.76,
+        "segment_ids": [
+          "S0232",
+          "S0233",
+          "S0234"
+        ],
+        "score": 1.0
+      }
+    }
+  ],
+  "action_items": [
+    {
+      "task": "Send list of priority parking spaces to all staff",
+      "owner": "Unspecified",
+      "deadline": "Unspecified",
+      "status": "Needs Review",
+      "evidence_quote": "So we all agree that we send a list to all staff, advising them about the priority parking.",
+      "evidence": {
+        "found": true,
+        "timestamp": 294.56,
+        "segment_ids": [
+          "S0077",
+          "S0078",
+          "S0079"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "task": "Coordinate with staff to confirm parking allocations",
+      "owner": "Unspecified",
+      "deadline": "Unspecified",
+      "status": "Needs Review",
+      "evidence_quote": "Fine, Jason, you do it.",
+      "evidence": {
+        "found": true,
+        "timestamp": 332.56,
+        "segment_ids": [
+          "S0087",
+          "S0088",
+          "S0089"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "task": "Prepare staff morale questionnaire results for next meeting",
+      "owner": "Unspecified",
+      "deadline": "Unspecified",
+      "status": "Needs Review",
+      "evidence_quote": "If you have a look, you'll see very clearly the feedback statistics.",
+      "evidence": {
+        "found": true,
+        "timestamp": 465.12,
+        "segment_ids": [
+          "S0127",
+          "S0128"
+        ],
+        "score": 0.815
+      }
+    },
+    {
+      "task": "Schedule IT backup review meeting with Clive and Frank",
+      "owner": "Unspecified",
+      "deadline": "Unspecified",
+      "status": "Needs Review",
+      "evidence_quote": "I want to run it past Clive first. Maybe we could save that for the next meeting?",
+      "evidence": {
+        "found": true,
+        "timestamp": 726.76,
+        "segment_ids": [
+          "S0232",
+          "S0233",
+          "S0234"
+        ],
+        "score": 1.0
+      }
+    }
+  ],
+  "discussion_points": [
+    "Parking priority allocation",
+    "Staff morale concerns",
+    "IT backup issue",
+    "Financial report summary",
+    "Housekeeping issues"
+  ],
+  "open_questions": [
+    "What is the exact date for the IT backup review meeting?",
+    "How will staff morale be measured after the questionnaire?"
+  ]
+}

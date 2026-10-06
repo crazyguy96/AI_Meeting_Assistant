@@ -1,0 +1,19 @@
+[
+  {
+    "task": "Prepare evaluation report including precision, recall, and F1 score",
+    "owner": "Priya",
+    "deadline": "Monday",
+    "status": "Needs Review",
+    "evidence_quote": "Priya will prepare the evaluation report by Monday.",
+    "evidence": {
+      "found": true,
+      "timestamp": 26.32,
+      "segment_ids": [
+        "S0006",
+        "S0007",
+        "S0008"
+      ],
+      "score": 1.0
+    }
+  }
+]

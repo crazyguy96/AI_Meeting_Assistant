@@ -1,0 +1,161 @@
+{
+  "glossary": [
+    "Meeting",
+    "Chair",
+    "Action Item",
+    "Frank Lyons",
+    "Gary Cope",
+    "Karl Madden",
+    "Joey Ballonweasley",
+    "Clive",
+    "Janet Bowers",
+    "Rita",
+    "Jason Somerville",
+    "Sarah Bryant",
+    "Lucy Strokes",
+    "Sue Carpenter",
+    "Julian Geddes",
+    "Yorkshire and Shipman",
+    "priority parking",
+    "Comet software",
+    "IT system",
+    "managing director",
+    "project and program manager",
+    "sales director",
+    "HR manager",
+    "priority parking spaces",
+    "visitor parking",
+    "staff morale",
+    "sales figures",
+    "sickness absence",
+    "restructuring",
+    "anonymous questionnaire",
+    "password",
+    "appraisals",
+    "team challenge",
+    "go-karting",
+    "party pilates",
+    "darts",
+    "F-Drive",
+    "PCP",
+    "Logative Rebix",
+    "external energy source",
+    "mainframe",
+    "sub-feeders",
+    "electricity supplier",
+    "balance sheet",
+    "contract sales",
+    "handset sales",
+    "utility bill",
+    "red",
+    "black",
+    "IT issues",
+    "Frank",
+    "Sue",
+    "Gary",
+    "Julian"
+  ],
+  "proposed_edits": [
+    {
+      "segment_id": "S0090",
+      "from": "Sue, can you explain the",
+      "to": "Sue Carpenter, can you explain the",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0091",
+      "from": "Sue has identified a growing problem",
+      "to": "Sue Carpenter has identified a growing problem",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0125",
+      "from": "you could all look at the second report, Lucy and",
+      "to": "you could all look at the second report, Lucy Strokes and",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0128",
+      "from": "you'll see very clearly the feedback statistics and",
+      "to": "you'll see very clearly the feedback statistics and",
+      "reason": "no change",
+      "confidence": 1.0
+    },
+    {
+      "segment_id": "S0129",
+      "from": "Lucy, I don't mean to pick on you, but you were given a",
+      "to": "Lucy Strokes, I don't mean to pick on you, but you were given a",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0130",
+      "from": "password and like everyone else, you seem to have",
+      "to": "password and like everyone else, you seem to have",
+      "reason": "no change",
+      "confidence": 1.0
+    },
+    {
+      "segment_id": "S0197",
+      "from": "main framework",
+      "to": "mainframe",
+      "reason": "glossary term",
+      "confidence": 0.99
+    }
+  ],
+  "applied_edits": [
+    {
+      "segment_id": "S0090",
+      "from": "Sue, can you explain the",
+      "to": "Sue Carpenter, can you explain the",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0091",
+      "from": "Sue has identified a growing problem",
+      "to": "Sue Carpenter has identified a growing problem",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0125",
+      "from": "you could all look at the second report, Lucy and",
+      "to": "you could all look at the second report, Lucy Strokes and",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0128",
+      "from": "you'll see very clearly the feedback statistics and",
+      "to": "you'll see very clearly the feedback statistics and",
+      "reason": "no change",
+      "confidence": 1.0
+    },
+    {
+      "segment_id": "S0129",
+      "from": "Lucy, I don't mean to pick on you, but you were given a",
+      "to": "Lucy Strokes, I don't mean to pick on you, but you were given a",
+      "reason": "full name from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0130",
+      "from": "password and like everyone else, you seem to have",
+      "to": "password and like everyone else, you seem to have",
+      "reason": "no change",
+      "confidence": 1.0
+    },
+    {
+      "segment_id": "S0197",
+      "from": "main framework",
+      "to": "mainframe",
+      "reason": "glossary term",
+      "confidence": 0.99
+    }
+  ],
+  "rejected_edits": []
+}

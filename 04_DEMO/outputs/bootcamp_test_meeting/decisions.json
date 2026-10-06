@@ -1,0 +1,32 @@
+[
+  {
+    "text": "No deployment of new model this Friday",
+    "status": "Confirmed",
+    "evidence_quote": "We will not deploy the new model this Friday.",
+    "evidence": {
+      "found": true,
+      "timestamp": 15.860000000000001,
+      "segment_ids": [
+        "S0004",
+        "S0005",
+        "S0006"
+      ],
+      "score": 1.0
+    }
+  },
+  {
+    "text": "Infrastructure budget estimate is 2.5 lakh rupees",
+    "status": "Confirmed",
+    "evidence_quote": "The current estimate is 2.5 lakh rupees, not 25 lakh.",
+    "evidence": {
+      "found": true,
+      "timestamp": 37.52,
+      "segment_ids": [
+        "S0009",
+        "S0010",
+        "S0011"
+      ],
+      "score": 1.0
+    }
+  }
+]

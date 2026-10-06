@@ -1,0 +1,32 @@
+[
+  {
+    "text": "Allocate two parking spaces to sales team, three to visitors, and two remaining for management",
+    "status": "Confirmed",
+    "evidence_quote": "So we all agree that we send a list to all staff, advising them about the priority parking.",
+    "evidence": {
+      "found": true,
+      "timestamp": 294.56,
+      "segment_ids": [
+        "S0077",
+        "S0078",
+        "S0079"
+      ],
+      "score": 1.0
+    }
+  },
+  {
+    "text": "Send a list to all staff advising them about the priority parking",
+    "status": "Confirmed",
+    "evidence_quote": "So we all agree that we send a list to all staff, advising them about the priority parking.",
+    "evidence": {
+      "found": true,
+      "timestamp": 294.56,
+      "segment_ids": [
+        "S0077",
+        "S0078",
+        "S0079"
+      ],
+      "score": 1.0
+    }
+  }
+]
