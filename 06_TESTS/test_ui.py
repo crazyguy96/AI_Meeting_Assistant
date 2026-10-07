@@ -202,3 +202,51 @@ def test_ui_returns_readable_error_when_no_audio_is_selected():
     assert result["error"] is True
     assert "Upload a meeting recording" in result["friendly_error"]
     assert button["interactive"] is True
+
+
+def test_audio_validation_ui_friendly_errors():
+    err_unsupported = gradio_app._friendly_error(ValueError("Unsupported audio file type: .txt"), "received")
+    assert "not supported" in err_unsupported.lower()
+
+    err_empty = gradio_app._friendly_error(ValueError("The uploaded recording is empty."), "received")
+    assert "empty" in err_empty.lower()
+
+    err_corrupt = gradio_app._friendly_error(ValueError("Corrupt or unreadable audio: test.wav"), "received")
+    assert "corrupt" in err_corrupt.lower() or "unreadable" in err_corrupt.lower()
+
+    err_silent = gradio_app._friendly_error(ValueError("Audio is completely or almost entirely silent"), "received")
+    assert "silent" in err_silent.lower()
+
+    err_duration = gradio_app._friendly_error(ValueError("Audio duration is shorter than minimum"), "received")
+    assert "duration" in err_duration.lower()
+
+
+def test_ui_result_component_renders_refinement_warning_banner(tmp_path):
+    output_dir = tmp_path / "outputs"
+    output_dir.mkdir()
+    archive = output_dir / "run.zip"
+    archive.write_bytes(b"zip")
+
+    result = {
+        "record": {
+            "meeting_title": "Project Sync",
+            "summary": "Discussed plan.",
+            "decisions": [],
+            "action_items": [],
+            "minutes": [],
+        },
+        "output_dir": str(output_dir),
+        "archive_path": str(archive),
+        "raw_transcript": "Good morning.",
+        "raw_segments": [{"start": 0.0, "end": 1.0, "text": "Good morning."}],
+        "refined_transcript": "Good morning.",
+        "refined_segments": [{"start": 0.0, "end": 1.0, "text": "Good morning."}],
+        "refinement_failed": True,
+        "refinement_warning": "Transcript refinement encountered an error. The pipeline fell back to the unedited raw transcript.",
+    }
+
+    values = gradio_app._result_component_values(result)
+    assert "Refinement Notice" in values[0]
+    assert "fell back to the unedited raw transcript" in values[0]
+    assert values[1]["visible"] is False
+    assert values[2]["visible"] is True

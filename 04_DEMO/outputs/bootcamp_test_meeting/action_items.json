@@ -1,17 +1,51 @@
 [
   {
-    "task": "Prepare evaluation report including precision, recall, and F1 score",
+    "task": "Prepare the evaluation report including precision, recall, and F1 score",
     "owner": "Priya",
     "deadline": "Monday",
-    "status": "Needs Review",
-    "evidence_quote": "Priya will prepare the evaluation report by Monday.",
+    "status": "Confirmed",
+    "evidence_quote": "Priya will prepare the evaluation report by Monday. The report should include precision, recall, and F1 score.",
     "evidence": {
       "found": true,
-      "timestamp": 26.32,
+      "timestamp": 31.08,
       "segment_ids": [
-        "S0006",
         "S0007",
-        "S0008"
+        "S0008",
+        "S0009"
+      ],
+      "score": 1.0
+    }
+  },
+  {
+    "task": "Complete testing of the new model",
+    "owner": "Unspecified",
+    "deadline": "Unspecified",
+    "status": "Needs Review",
+    "evidence_quote": "We still need to complete testing.",
+    "evidence": {
+      "found": true,
+      "timestamp": 21.36,
+      "segment_ids": [
+        "S0005",
+        "S0006",
+        "S0007"
+      ],
+      "score": 1.0
+    }
+  },
+  {
+    "task": "Review latency results and decide on GPU configuration",
+    "owner": "Unspecified",
+    "deadline": "Unspecified",
+    "status": "Needs Review",
+    "evidence_quote": "For the next meeting, we should review the latency results and decide whether the current GPU configuration is sufficient.",
+    "evidence": {
+      "found": true,
+      "timestamp": 45.44,
+      "segment_ids": [
+        "S0011",
+        "S0012",
+        "S0013"
       ],
       "score": 1.0
     }

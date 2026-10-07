@@ -1,0 +1,21 @@
+# Meeting Minutes
+
+- Introductions and attendance noted, including apologies and new member announcements
+- Lucy raised car parking conflicts due to limited spaces
+- Discussion of priority parking and allocation of spaces
+- Agreement on three visitor parking spaces
+- Decision to circulate a staff list detailing priority parking and penalties
+- Brief mention of staff morale issue without resolution
+- Low staff morale identified, tied to sales decline, sickness absence, and recent restructuring.
+- New software rollout caused training gaps and errors, affecting morale.
+- Anonymous questionnaire results highlighted lack of training, poor management, and restructuring concerns.
+- Various morale‑boosting activities proposed (go‑karting, awards night, party pilates, darts, drinking evenings).
+- Decision to put activity options to a staff vote.
+- IT backup failure traced to missing component and external energy issue.
+- Agreement to ensure electricity bills are paid on time to avoid power outages.
+- Plan for a separate meeting on training issues involving Sue, Clive, and Frank.
+- Revenue from handset sales abroad is down compared to last year
+- The financial figure under review was clarified to be 11
+- The company is currently in the black but down year‑over‑year
+- General cleanliness problems were identified in the kitchen and shower room
+- A possible dishwasher malfunction was mentioned

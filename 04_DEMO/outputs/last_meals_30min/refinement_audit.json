@@ -1,0 +1,628 @@
+{
+  "glossary": [
+    "Ryan Treyhan",
+    "Nick",
+    "Guga",
+    "Mark",
+    "Jesser",
+    "Kyle",
+    "Kai",
+    "Sam and Colby",
+    "Gordon Ramsay",
+    "YouTuber",
+    "YouTubers",
+    "salmon nigiri",
+    "wasabi",
+    "hamburger",
+    "root beer",
+    "tiramisu",
+    "sushi",
+    "cheeseburger",
+    "cheese souffle",
+    "Brazilian cheese bread",
+    "soup dumplings",
+    "beef Wellington",
+    "beef Wellington 2.0",
+    "French macarons",
+    "cheese sandwich",
+    "grilled cheese sandwich",
+    "smiley face potatoes",
+    "root beer float",
+    "creme brulee french toast",
+    "ice cream",
+    "big mac and cheese",
+    "lamb chops",
+    "mac and cheese",
+    "sweet tea",
+    "cheesecake",
+    "strawberry cheesecake",
+    "chocolate cheesecake",
+    "deviled eggs",
+    "black salt",
+    "ghost pepper pizza",
+    "chocolate dirt cake",
+    "Oreos",
+    "gummy worms",
+    "Mountain Dew",
+    "ghost pepper",
+    "jalapeno",
+    "Dirt and Worms",
+    "Taco Bell",
+    "beefy gordita crunch",
+    "nacho fries",
+    "beefy five layer burrito",
+    "Diablo sauce",
+    "Baja Blast",
+    "F tier",
+    "S tier",
+    "KSI",
+    "Jollof rice",
+    "Nigerian Jollof rice",
+    "fried rice",
+    "KFC chicken",
+    "cookie",
+    "strawberry white chocolate cookie",
+    "prime energy",
+    "cherry limeade",
+    "boba",
+    "Chinese egg tart",
+    "Stokes Twins",
+    "chole batore",
+    "lassi",
+    "gajar kahlua",
+    "Uruguayan beef Milanese",
+    "mixed mashed potatoes",
+    "mashed pumpkin",
+    "Uruguayan alfajor",
+    "dulce de leche",
+    "orange juice",
+    "Milanese",
+    "lemon",
+    "Starbucks mocha",
+    "dark chocolate",
+    "chicken fried steak",
+    "cream gravy",
+    "fried okra",
+    "blackberry cobbler",
+    "coffee",
+    "espresso machine",
+    "cheese croquettes",
+    "chico gratin",
+    "ham rolls",
+    "chicory",
+    "mashed potatoes",
+    "Belgian waffles",
+    "lasagna",
+    "MKBHD",
+    "Selena",
+    "Amy",
+    "Marquez",
+    "breakfast",
+    "cinnamon french toast",
+    "scrambled eggs",
+    "bacon",
+    "breakfast potatoes",
+    "ribeye",
+    "lobster tail",
+    "crème brûlée",
+    "cherry Dr. Pepper",
+    "compound butter",
+    "medium rare",
+    "Dr. Pepper",
+    "boulonnaise pasta",
+    "potato gratin",
+    "lemonade",
+    "cereal",
+    "egg fried rice",
+    "sweet and sour chicken",
+    "strawberry mint soda",
+    "chocolate crepes",
+    "crepe",
+    "Chinese takeout",
+    "crepes",
+    "chocolate drizzle",
+    "whipped cream",
+    "chocolate chip pancakes",
+    "chocolate chip cookies",
+    "ZHC",
+    "truffle fries",
+    "Shirley Temple",
+    "panna cotta",
+    "maple syrup",
+    "truffle oil",
+    "preston",
+    "ben asilar",
+    "beta squad",
+    "bater squad",
+    "Zach King",
+    "ZHT",
+    "B tier",
+    "C tier",
+    "Thai iced tea",
+    "spring roll",
+    "chili oil",
+    "cheesy gordita crunch",
+    "skillet queso",
+    "axis deer",
+    "deer tenderloin",
+    "wagyu steak",
+    "Dude Perfect"
+  ],
+  "proposed_edits": [
+    {
+      "segment_id": "S0065",
+      "from": "beef wellington",
+      "to": "beef Wellington",
+      "reason": "match glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0066",
+      "from": "french macarons",
+      "to": "French macarons",
+      "reason": "match glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0115",
+      "from": "How do we give Mark Robert a rating?",
+      "to": "How do we give Mark a rating?",
+      "reason": "Correct name to glossary entry",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0120",
+      "from": "Mark Robert, your last meal gets an A tier.",
+      "to": "Mark, your last meal gets an A tier.",
+      "reason": "Correct name to glossary entry",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0160",
+      "from": "smiley fries",
+      "to": "smiley face potatoes",
+      "reason": "glossary term",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0161",
+      "from": "b-tier",
+      "to": "B tier",
+      "reason": "glossary term",
+      "confidence": 0.94
+    },
+    {
+      "segment_id": "S0257",
+      "from": "dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0258",
+      "from": "dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0260",
+      "from": "Dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0265",
+      "from": "Smiley potato fries",
+      "to": "smiley face potatoes",
+      "reason": "glossary term correction",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S0265",
+      "from": "dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0288",
+      "from": "Baja blast",
+      "to": "Baja Blast",
+      "reason": "capitalization per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0315",
+      "from": "Baja blast",
+      "to": "Baja Blast",
+      "reason": "capitalization per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0324",
+      "from": "Arak",
+      "to": "Taco Bell",
+      "reason": "glossary term correction",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0380",
+      "from": "prime energy, cherry, and lemmead",
+      "to": "prime energy, cherry, and limeade",
+      "reason": "Corrected 'lemmead' to glossary term 'limeade'",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S0418",
+      "from": "And KSI is getting a tear.",
+      "to": "And KSI is getting a tier.",
+      "reason": "misrecognition of glossary term 'tier'",
+      "confidence": 0.92
+    },
+    {
+      "segment_id": "S0420",
+      "from": "It's the Stokes ones.",
+      "to": "It's the Stokes Twins.",
+      "reason": "misrecognition of glossary term 'Stokes Twins'",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0514",
+      "from": "Uruguayan style beef",
+      "to": "Uruguayan beef",
+      "reason": "matches glossary term \"Uruguayan beef Milanese\"",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0562",
+      "from": "Alfajores.",
+      "to": "Uruguayan alfajor",
+      "reason": "matches glossary term",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0624",
+      "from": "omokah",
+      "to": "mocha",
+      "reason": "coffee term from glossary",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0644",
+      "from": "meek salineer",
+      "to": "Preston",
+      "reason": "name from glossary",
+      "confidence": 0.94
+    },
+    {
+      "segment_id": "S0742",
+      "from": "I would love a cherry doctor pepper.",
+      "to": "I would love a cherry Dr. Pepper.",
+      "reason": "Correct brand name",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0743",
+      "from": "If you can make the cherry doctor pepper from scratch,",
+      "to": "If you can make the cherry Dr. Pepper from scratch,",
+      "reason": "Correct brand name",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0792",
+      "from": "Faze rug gets a very strong A-tier.",
+      "to": "Faze Rug gets a very strong F-tier.",
+      "reason": "Corrected proper name and tier term per glossary",
+      "confidence": 0.96
+    },
+    {
+      "segment_id": "S0847",
+      "from": "Ben Aslar",
+      "to": "ben asilar",
+      "reason": "name spelling from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0849",
+      "from": "Bater Squad",
+      "to": "bater squad",
+      "reason": "team name from glossary",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S0855",
+      "from": "Strawberry, mint, soda.",
+      "to": "strawberry mint soda",
+      "reason": "matches glossary term",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0906",
+      "from": "Beta Squad",
+      "to": "beta squad",
+      "reason": "match glossary entry",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S1015",
+      "from": "I'm going to go chili skillet queso.",
+      "to": "I'm going to go skillet queso.",
+      "reason": "remove extraneous word 'chili' before term",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S1019",
+      "from": "dude perfect",
+      "to": "Dude Perfect",
+      "reason": "correct capitalization of known entity",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S1033",
+      "from": "cheesy skillet queso",
+      "to": "skillet queso",
+      "reason": "match glossary term",
+      "confidence": 0.94
+    },
+    {
+      "segment_id": "S1037",
+      "from": "dude perfect",
+      "to": "Dude Perfect",
+      "reason": "correct capitalization of known entity",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S1053",
+      "from": "dude perfect",
+      "to": "Dude Perfect",
+      "reason": "correct capitalization of known entity",
+      "confidence": 0.98
+    }
+  ],
+  "applied_edits": [
+    {
+      "segment_id": "S0065",
+      "from": "beef wellington",
+      "to": "beef Wellington",
+      "reason": "match glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0066",
+      "from": "french macarons",
+      "to": "French macarons",
+      "reason": "match glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0160",
+      "from": "smiley fries",
+      "to": "smiley face potatoes",
+      "reason": "glossary term",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0161",
+      "from": "b-tier",
+      "to": "B tier",
+      "reason": "glossary term",
+      "confidence": 0.94
+    },
+    {
+      "segment_id": "S0257",
+      "from": "dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0258",
+      "from": "dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0260",
+      "from": "Dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0265",
+      "from": "Smiley potato fries",
+      "to": "smiley face potatoes",
+      "reason": "glossary term correction",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S0265",
+      "from": "dirt and worms",
+      "to": "Dirt and Worms",
+      "reason": "glossary term capitalization",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0288",
+      "from": "Baja blast",
+      "to": "Baja Blast",
+      "reason": "capitalization per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0315",
+      "from": "Baja blast",
+      "to": "Baja Blast",
+      "reason": "capitalization per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0380",
+      "from": "prime energy, cherry, and lemmead",
+      "to": "prime energy, cherry, and limeade",
+      "reason": "Corrected 'lemmead' to glossary term 'limeade'",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S0418",
+      "from": "And KSI is getting a tear.",
+      "to": "And KSI is getting a tier.",
+      "reason": "misrecognition of glossary term 'tier'",
+      "confidence": 0.92
+    },
+    {
+      "segment_id": "S0420",
+      "from": "It's the Stokes ones.",
+      "to": "It's the Stokes Twins.",
+      "reason": "misrecognition of glossary term 'Stokes Twins'",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0514",
+      "from": "Uruguayan style beef",
+      "to": "Uruguayan beef",
+      "reason": "matches glossary term \"Uruguayan beef Milanese\"",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0562",
+      "from": "Alfajores.",
+      "to": "Uruguayan alfajor",
+      "reason": "matches glossary term",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0624",
+      "from": "omokah",
+      "to": "mocha",
+      "reason": "coffee term from glossary",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S0644",
+      "from": "meek salineer",
+      "to": "Preston",
+      "reason": "name from glossary",
+      "confidence": 0.94
+    },
+    {
+      "segment_id": "S0742",
+      "from": "I would love a cherry doctor pepper.",
+      "to": "I would love a cherry Dr. Pepper.",
+      "reason": "Correct brand name",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0743",
+      "from": "If you can make the cherry doctor pepper from scratch,",
+      "to": "If you can make the cherry Dr. Pepper from scratch,",
+      "reason": "Correct brand name",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0792",
+      "from": "Faze rug gets a very strong A-tier.",
+      "to": "Faze Rug gets a very strong F-tier.",
+      "reason": "Corrected proper name and tier term per glossary",
+      "confidence": 0.96
+    },
+    {
+      "segment_id": "S0847",
+      "from": "Ben Aslar",
+      "to": "ben asilar",
+      "reason": "name spelling from glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0849",
+      "from": "Bater Squad",
+      "to": "bater squad",
+      "reason": "team name from glossary",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S0855",
+      "from": "Strawberry, mint, soda.",
+      "to": "strawberry mint soda",
+      "reason": "matches glossary term",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0906",
+      "from": "Beta Squad",
+      "to": "beta squad",
+      "reason": "match glossary entry",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S1015",
+      "from": "I'm going to go chili skillet queso.",
+      "to": "I'm going to go skillet queso.",
+      "reason": "remove extraneous word 'chili' before term",
+      "confidence": 0.95
+    },
+    {
+      "segment_id": "S1019",
+      "from": "dude perfect",
+      "to": "Dude Perfect",
+      "reason": "correct capitalization of known entity",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S1033",
+      "from": "cheesy skillet queso",
+      "to": "skillet queso",
+      "reason": "match glossary term",
+      "confidence": 0.94
+    },
+    {
+      "segment_id": "S1037",
+      "from": "dude perfect",
+      "to": "Dude Perfect",
+      "reason": "correct capitalization of known entity",
+      "confidence": 0.98
+    },
+    {
+      "segment_id": "S1053",
+      "from": "dude perfect",
+      "to": "Dude Perfect",
+      "reason": "correct capitalization of known entity",
+      "confidence": 0.98
+    }
+  ],
+  "rejected_edits": [
+    {
+      "segment_id": "S0115",
+      "from": "How do we give Mark Robert a rating?",
+      "to": "How do we give Mark a rating?",
+      "reason": "Correct name to glossary entry",
+      "confidence": 0.99,
+      "reasons": [
+        "unsupported name change"
+      ]
+    },
+    {
+      "segment_id": "S0120",
+      "from": "Mark Robert, your last meal gets an A tier.",
+      "to": "Mark, your last meal gets an A tier.",
+      "reason": "Correct name to glossary entry",
+      "confidence": 0.99,
+      "reasons": [
+        "unsupported name change"
+      ]
+    },
+    {
+      "segment_id": "S0324",
+      "from": "Arak",
+      "to": "Taco Bell",
+      "reason": "glossary term correction",
+      "confidence": 0.99,
+      "reasons": [
+        "unsupported name change"
+      ]
+    }
+  ]
+}

@@ -59,7 +59,7 @@ The Gradio interface will start locally.
 pytest 06_TESTS
 ```
 
-**Current verification: 88 tests passing.**
+**Current verification: 98 tests passing.**
 
 ---
 
@@ -424,7 +424,7 @@ See `07_SUBMISSION/DEMO.md` for the evaluator-facing demo workflow.
 | Language | Python |
 | Speech-to-Text | faster-whisper |
 | Refinement | `openai/gpt-oss-120b` |
-| Documentation | `openai/gpt-oss-20b` |
+| Documentation | `openai/gpt-oss-120b` |
 | LLM Inference | Groq |
 | UI | Gradio |
 | Structured Output | JSON / JSON Schema |

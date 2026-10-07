@@ -88,4 +88,6 @@ def process_meeting(
         "record_markdown": render_markdown(record),
         "output_dir": output_dir,
         "archive_path": archive_path,
+        "refinement_failed": refined.get("refinement_failed", False),
+        "refinement_warning": refined.get("refinement_warning"),
     }

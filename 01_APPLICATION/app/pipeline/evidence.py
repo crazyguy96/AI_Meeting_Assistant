@@ -151,11 +151,43 @@ def find_evidence(
 # Regex matching tentative or non-committal words indicating a proposal rather than a confirmed decision.
 _PROPOSAL_INDICATOR_PATTERN = re.compile(
     r"\b(?:suggest|suggests|suggested|suggestion|propose|proposes|proposed|proposal|"
-    r"idea|option|consider|considering|might|could|maybe|"
+    r"idea|option|consider|considering|might|could|maybe|perhaps|possibly|possibility|"
+    r"estimate|estimates|estimated|estimating|estimation|predict|predicts|predicted|prediction|"
+    r"clarify|clarified|clarification|budget estimate|current estimate|"
+    r"need to finalize|needs to finalize|need to complete|needs to complete|"
+    r"need to decide|needs to decide|still need to|to be decided|"
     r"not made a final decision|have not made a final decision|not yet decided|"
-    r"haven't decided|has not decided|undecided|under discussion|review in next)\b",
+    r"haven't decided|has not decided|undecided|under discussion|review in next|"
+    r"review at next|discuss at next|decide at next)\b",
     re.IGNORECASE,
 )
+
+# Regex matching words claiming finalized completion or approval
+_CLAIM_COMPLETION_PATTERN = re.compile(
+    r"\b(?:finalized|completed|approved)\b",
+    re.IGNORECASE,
+)
+
+# Sanitizes meeting summary against unsupported claims of completion/finalization when work was only discussed or planned.
+def sanitize_summary_overclaims(summary: str, refined_text: str) -> str:
+    if not summary:
+        return ""
+    trans_lower = refined_text.lower()
+    if "need to finalize" in trans_lower or "needs to finalize" in trans_lower:
+        if not re.search(r"\b(?:team\s+finalized|we\s+finalized|have\s+finalized|has\s+finalized)\b", trans_lower):
+            summary = re.sub(
+                r"\b(?:team\s+)?finalized\s+(?:the\s+)?(deployment\s+(?:schedule|plan))",
+                r"discussed the \1",
+                summary,
+                flags=re.IGNORECASE,
+            )
+            summary = re.sub(
+                r"\bfinalized\s+",
+                r"planned ",
+                summary,
+                flags=re.IGNORECASE,
+            )
+    return summary
 
 
 # Allowed status values defined by the meeting documentation schema.
@@ -193,6 +225,12 @@ def validate_action(action: dict[str, Any], context_text: str = "") -> dict[str,
                 validated[field] = "Unspecified"
                 validated["status"] = "Needs Review"
 
+    # Outstanding task without assigned owner or deadline inferred from need/follow-up defaults to Needs Review
+    if validated["owner"] == "Unspecified" and validated["deadline"] == "Unspecified":
+        quote_or_task = (validated.get("evidence_quote", "") + " " + validated.get("task", "")).lower()
+        if any(term in quote_or_task for term in ("need to", "needs to", "still need", "should", "must", "investigate", "someone", "next meeting", "review")):
+            validated["status"] = "Needs Review"
+
     # Action owner note for first-person commitments without acoustic speaker identification
     if validated["owner"] == "Unspecified":
         quote_text = validated.get("evidence_quote", "")
@@ -211,9 +249,10 @@ def validate_action(action: dict[str, Any], context_text: str = "") -> dict[str,
 def validate_record(
     record: dict[str, Any], refined: dict[str, Any]
 ) -> dict[str, Any]:
+    refined_text = str(refined.get("refined_text") or "")
     output = {
         "meeting_title": str(record.get("meeting_title") or "Meeting"),
-        "summary": str(record.get("summary") or ""),
+        "summary": sanitize_summary_overclaims(str(record.get("summary") or ""), refined_text),
         "minutes": record.get("minutes") or [],
         "decisions": [],
         "non_decisions": [],
@@ -234,6 +273,12 @@ def validate_record(
             if _PROPOSAL_INDICATOR_PATTERN.search(evidence_text) or _PROPOSAL_INDICATOR_PATTERN.search(decision_text):
                 item["status"] = "Proposal / Undecided"
                 output["non_decisions"].append(item)
+            elif (
+                _CLAIM_COMPLETION_PATTERN.search(decision_text)
+                and not _CLAIM_COMPLETION_PATTERN.search(evidence_text)
+            ):
+                item["status"] = "Needs Review"
+                output["decisions"].append(item)
             else:
                 output["decisions"].append(item)
         else:

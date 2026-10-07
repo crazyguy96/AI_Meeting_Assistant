@@ -2,19 +2,41 @@ Create a concise, faithful meeting record from the refined transcript. Do not ad
 
 Organize minutes as a list of distinct, concise topic bullets (target roughly 5–10 topic bullets for a typical 15-minute meeting when the discussion supports that many; do not artificially fabricate topics if the meeting has fewer). Each minute entry must be an individual item covering a clear discussion topic or update, never a single run-on or semicolon-separated paragraph.
 
-Distinguish confirmed decisions from proposals, options, and unresolved discussion. Put proposed or unresolved items under non_decisions; never promote a proposal to a confirmed decision (Proposal ≠ Decision). Every decision and action item must include a short exact evidence_quote from the transcript. For decisions, set status to "Confirmed".
+DECISION RULES:
+Distinguish confirmed decisions from proposals, options, clarifications, estimates, predictions, possibilities, and unresolved discussion.
+- A clarification, estimate, prediction, possibility, proposal, or discussion is NOT a confirmed decision (e.g. "Budget is estimated at 2.5 lakh" is an estimate, NOT a decision; "We might deploy Friday" is a possibility, NOT a decision; "We need to finalize the deployment plan" is an outstanding goal, NOT a decision).
+- Put proposals, estimates, and unresolved items under non_decisions ("Discussed, Not Decided"); never promote a proposal or estimate to a confirmed decision (Proposal ≠ Decision; Estimate ≠ Decision).
+- NEVER claim that something was finalized, completed, approved, decided, or confirmed unless the transcript explicitly and literally supports that claim.
+- Every decision must include a short exact evidence_quote from the transcript. For verified confirmed decisions, set status to "Confirmed".
 
-An action item must describe an explicit commitment or assignment, not merely a suggestion (Suggestion ≠ Assignment; Possibility ≠ Commitment). Set owner to a person's name only when the transcript explicitly assigns the work to them; otherwise use "Unspecified". Set deadline only when an explicit deadline is stated (Mentioned date ≠ Deadline); otherwise use "Unspecified". Do not infer either from context. Set action item status to "Confirmed" when an explicit assignment or commitment is clearly established in the transcript; set status to "Needs Review" only when assignment, commitment, owner, or deadline cannot be confidently established. If an assignment, owner, or deadline is confirmed across adjacent lines/utterances, include the relevant dialogue context in evidence_quote.
+ACTION ITEM RULES:
+Capture explicit outstanding or future work as an action item when supported by the transcript.
+- Signals of work to be done include phrases such as: "need to", "still need to", "should", "must", "follow up", "review", "prepare", "complete", "investigate", "decide at next meeting", etc.
+- Outstanding tasks mentioned without an assigned owner (e.g. "We still need to complete testing", "Someone should investigate this", "We need to prepare the report") MUST be captured as action items with owner set to "Unspecified".
+- Future next-meeting follow-ups (e.g. "Review latency results and decide GPU configuration next meeting") MUST be captured as action items.
+- Owner rule: Do NOT invent an owner. Set owner to a person's name only when the transcript explicitly assigns the work to them; otherwise use "Unspecified".
+- Deadline rule: Do NOT invent a deadline. Set deadline only when an explicit deadline is stated (Mentioned date ≠ Deadline); otherwise use "Unspecified". Do not infer either from context.
+- Status rule: Set status to "Confirmed" when an explicit assignment or commitment to a specific person or deadline is clearly established in the transcript (Suggestion ≠ Assignment; Possibility ≠ Commitment). Set status to "Needs Review" when the task is unassigned, inferred from outstanding needs ("need to / should / must"), or scheduled for a future meeting.
+- Do NOT convert ordinary discussion, background context, technical explanations, or status updates (e.g. "We are currently using PyTorch", "The retrieval system uses PGvector") into action items.
+- Every action item must include a short exact evidence_quote from the transcript. If an assignment, owner, or deadline is confirmed across adjacent lines/utterances, include the relevant dialogue context in evidence_quote.
 
-Do not duplicate the exact same statement across both decisions and action_items. Record organizational agreements under decisions, and operational assigned tasks under action_items. If an item represents assigned work with an owner or deadline, record it under action_items rather than repeating it as a decision. Keep non_decisions ("Discussed, Not Decided") separate from confirmed decisions.
+SUMMARY RULES:
+The summary must strictly follow the transcript without overclaiming:
+- Only state decisions or milestones as completed or finalized when explicitly supported by the transcript.
+- Clearly distinguish planned, ongoing, or outstanding work from completed work (e.g. if the transcript states the team "needs to finalize the deployment plan", the summary must state that the team discussed or planned the deployment plan, NEVER that they "finalized the deployment schedule" or "finalized the plan").
+- Distinguish proposals from decisions.
+- Do not strengthen the language of the transcript or infer commitment from casual discussion.
+
+CROSS-SECTION DEDUPLICATION:
+Do not duplicate the exact same statement across both decisions and action_items. Record organizational agreements under decisions, and operational assigned or outstanding tasks under action_items. Keep non_decisions ("Discussed, Not Decided") separate from confirmed decisions.
 
 Return valid JSON only, using exactly these top-level fields and shapes:
 {
   "meeting_title": "short title",
-  "summary": "concise summary",
+  "summary": "concise, faithful summary without overclaiming",
   "minutes": ["concise point"],
   "decisions": [{"text":"decision","status":"Confirmed","evidence_quote":"exact transcript quote"}],
-  "non_decisions": [{"text":"proposal or unresolved item","evidence_quote":"exact transcript quote"}],
+  "non_decisions": [{"text":"proposal, estimate, or unresolved item","evidence_quote":"exact transcript quote"}],
   "action_items": [{"task":"explicit task","owner":"Unspecified","deadline":"Unspecified","status":"Confirmed","evidence_quote":"exact transcript quote"}],
   "discussion_points": ["point"],
   "open_questions": ["question"]

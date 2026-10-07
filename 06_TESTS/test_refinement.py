@@ -368,7 +368,7 @@ def test_stage_logging_prints_expected_markers(capsys, monkeypatch):
     assert "[STAGE] refinement chunk 1/1" in captured.out
 
 
-def test_refinement_logs_stage_error_and_raises(capsys, monkeypatch):
+def test_refinement_logs_stage_error_and_falls_back_to_raw(capsys, monkeypatch):
     monkeypatch.setattr(
         refinement,
         "load_prompt",
@@ -385,14 +385,15 @@ def test_refinement_logs_stage_error_and_raises(capsys, monkeypatch):
 
     monkeypatch.setattr(refinement, "groq_json", failing_groq)
 
-    import pytest
-    with pytest.raises(RuntimeError):
-        refinement.refine_transcription(
-            {
-                "text": "Hello world",
-                "segments": [{"id": "S0001", "start": 0.0, "end": 1.0, "text": "Hello world"}],
-            }
-        )
+    result = refinement.refine_transcription(
+        {
+            "text": "Hello world",
+            "segments": [{"id": "S0001", "start": 0.0, "end": 1.0, "text": "Hello world"}],
+        }
+    )
+    assert result["refined_text"] == "Hello world"
+    assert result["refinement_failed"] is True
+    assert "Refinement" in result["refinement_warning"] or "Transcript" in result["refinement_warning"]
     captured = capsys.readouterr()
     assert "[STAGE] refinement chunk 1/1" in captured.out
     assert "[ERROR] stage=refinement chunk=1/1 model=" in captured.out

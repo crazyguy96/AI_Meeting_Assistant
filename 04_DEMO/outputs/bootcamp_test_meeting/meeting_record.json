@@ -1,23 +1,23 @@
 {
-  "meeting_title": "ML Deployment Plan Meeting",
-  "summary": "Team finalized deployment schedule, assigned evaluation report, clarified budget, and set agenda for next meeting.",
+  "meeting_title": "ML Deployment Planning",
+  "summary": "The team reviewed the current ML stack, discussed migrating to PostgreSQL 16, confirmed that the new model will not be deployed this Friday, noted the budget estimate of 2.5 lakh rupees, and assigned Priya to prepare an evaluation report by Monday. Testing remains incomplete and latency results will be reviewed at the next meeting.",
   "minutes": [
-    "Finalize ML deployment plan",
-    "Using PyTorch and PostgreSQL with PGvector",
-    "Database migration to PostgreSQL 16 proposed by Rahul",
-    "No deployment of new model this Friday",
-    "Priya to prepare evaluation report by Monday including precision, recall, F1",
-    "Infrastructure budget estimate corrected to 2.5 lakh rupees",
-    "Next meeting: review latency results and decide on GPU configuration"
+    "Current ML stack uses PyTorch and PostgreSQL with PGvector",
+    "Proposal to migrate database to PostgreSQL 16",
+    "Decision not to deploy new model this Friday",
+    "Budget estimate clarified as 2.5 lakh rupees",
+    "Testing still pending",
+    "Priya assigned to prepare evaluation report by Monday",
+    "Next meeting will review latency results and GPU configuration"
   ],
   "decisions": [
     {
-      "text": "No deployment of new model this Friday",
+      "text": "The new model will not be deployed this Friday",
       "status": "Confirmed",
       "evidence_quote": "We will not deploy the new model this Friday.",
       "evidence": {
         "found": true,
-        "timestamp": 15.860000000000001,
+        "timestamp": 15.88,
         "segment_ids": [
           "S0004",
           "S0005",
@@ -25,10 +25,25 @@
         ],
         "score": 1.0
       }
+    }
+  ],
+  "non_decisions": [
+    {
+      "text": "Consider migrating the database to PostgreSQL version 16",
+      "evidence_quote": "Rahul suggested that we migrate the database to PostgreSQL version 16. The team discussed the idea, but we have not made a final decision yet.",
+      "evidence": {
+        "found": true,
+        "timestamp": 8.6,
+        "segment_ids": [
+          "S0003",
+          "S0004",
+          "S0005"
+        ],
+        "score": 1.0
+      }
     },
     {
       "text": "Infrastructure budget estimate is 2.5 lakh rupees",
-      "status": "Confirmed",
       "evidence_quote": "The current estimate is 2.5 lakh rupees, not 25 lakh.",
       "evidence": {
         "found": true,
@@ -40,33 +55,17 @@
         ],
         "score": 1.0
       }
-    }
-  ],
-  "non_decisions": [
-    {
-      "text": "Database migration to PostgreSQL 16 proposed by Rahul",
-      "evidence_quote": "Rahul suggested that we migrate the database to PostgreSQL version 16.",
-      "evidence": {
-        "found": true,
-        "timestamp": 4.44,
-        "segment_ids": [
-          "S0002",
-          "S0003",
-          "S0004"
-        ],
-        "score": 1.0
-      }
     },
     {
       "text": "Review latency results and decide on GPU configuration at next meeting",
-      "evidence_quote": "For the next meeting, we should review the latency results, and decide whether the current GPU configuration is sufficient.",
+      "evidence_quote": "For the next meeting, we should review the latency results and decide whether the current GPU configuration is sufficient.",
       "evidence": {
         "found": true,
-        "timestamp": 42.379999999999995,
+        "timestamp": 45.44,
         "segment_ids": [
-          "S0010",
           "S0011",
-          "S0012"
+          "S0012",
+          "S0013"
         ],
         "score": 1.0
       }
@@ -74,32 +73,63 @@
   ],
   "action_items": [
     {
-      "task": "Prepare evaluation report including precision, recall, and F1 score",
+      "task": "Prepare the evaluation report including precision, recall, and F1 score",
       "owner": "Priya",
       "deadline": "Monday",
-      "status": "Needs Review",
-      "evidence_quote": "Priya will prepare the evaluation report by Monday.",
+      "status": "Confirmed",
+      "evidence_quote": "Priya will prepare the evaluation report by Monday. The report should include precision, recall, and F1 score.",
       "evidence": {
         "found": true,
-        "timestamp": 26.32,
+        "timestamp": 31.08,
         "segment_ids": [
-          "S0006",
           "S0007",
-          "S0008"
+          "S0008",
+          "S0009"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "task": "Complete testing of the new model",
+      "owner": "Unspecified",
+      "deadline": "Unspecified",
+      "status": "Needs Review",
+      "evidence_quote": "We still need to complete testing.",
+      "evidence": {
+        "found": true,
+        "timestamp": 21.36,
+        "segment_ids": [
+          "S0005",
+          "S0006",
+          "S0007"
+        ],
+        "score": 1.0
+      }
+    },
+    {
+      "task": "Review latency results and decide on GPU configuration",
+      "owner": "Unspecified",
+      "deadline": "Unspecified",
+      "status": "Needs Review",
+      "evidence_quote": "For the next meeting, we should review the latency results and decide whether the current GPU configuration is sufficient.",
+      "evidence": {
+        "found": true,
+        "timestamp": 45.44,
+        "segment_ids": [
+          "S0011",
+          "S0012",
+          "S0013"
         ],
         "score": 1.0
       }
     }
   ],
   "discussion_points": [
-    "Database migration",
-    "Deployment schedule",
-    "Evaluation report",
-    "Budget estimate",
-    "GPU configuration"
+    "Current deployment stack and tools",
+    "Database migration proposal",
+    "Budget clarification"
   ],
   "open_questions": [
-    "Will the current GPU configuration be sufficient?",
-    "What is the final decision on database migration to PostgreSQL 16?"
+    "Is PostgreSQL version 16 the best choice for the retrieval system?"
   ]
 }

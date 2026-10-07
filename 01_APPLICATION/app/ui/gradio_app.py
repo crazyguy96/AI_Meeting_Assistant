@@ -605,8 +605,14 @@ def _friendly_error(exc: Exception, stage: str) -> str:
         return "This audio format is not supported. Upload a WAV, MP3, M4A, MP4, MPEG, MPGA, FLAC, or WebM file."
     if "empty" in lowered:
         return "The uploaded recording is empty. Choose a non-empty audio file and try again."
-    if "cannot be read" in lowered or "not a file" in lowered or "missing" in lowered:
-        return "We couldn't read the uploaded audio file. Re-upload the recording and try again."
+    if "corrupt" in lowered or "cannot be read" in lowered or "unreadable" in lowered:
+        return "The uploaded audio file is corrupt or unreadable. Please provide a valid, playable audio recording."
+    if "silent" in lowered:
+        return "The uploaded audio file is completely silent. Please provide a recording with audible speech."
+    if "duration" in lowered:
+        return "Audio duration is outside supported limits. Please provide a recording between 0.5 seconds and 4 hours."
+    if "not a file" in lowered or "missing" in lowered:
+        return "We couldn't find the uploaded audio file. Re-upload the recording and try again."
     stage_messages = {
         "transcribing": "Local transcription failed. Check that the audio is valid and playable, then try again.",
         "refining": "Refinement failed. Raw transcript is available, but the refined transcript and final meeting record could not be generated.",
@@ -650,8 +656,17 @@ def _result_component_values(result: dict[str, Any] | None) -> tuple[Any, ...]:
         else None
     )
 
+    warning_banner = ""
+    if result.get("refinement_warning"):
+        warning_banner = (
+            '<section class="warning-panel" role="alert" style="background:#FFFBEB; '
+            'border:1px solid #F59E0B; border-radius:8px; padding:12px 16px; margin-bottom:16px; color:#92400E;">'
+            f'<strong>⚠️ Refinement Notice:</strong> {_escape(str(result["refinement_warning"]))}'
+            '</section>'
+        )
+
     return (
-        "",
+        warning_banner,
         gr.update(visible=False),
         gr.update(visible=True),
         gr.update(interactive=True),

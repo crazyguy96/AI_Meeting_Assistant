@@ -31,7 +31,9 @@ Create `.env` in the repository root from `03_DEPENDENCIES/.env.example` if it d
 
 The `small` faster-whisper model runs locally on CPU with int8 compute. Its model weights may be downloaded on the first run and are reused from the local cache afterward.
 
-The faster-whisper dependency is pinned to the upstream commit that handles the PyAV 19 `av.open` API change. It selects audio-open keyword arguments according to the installed PyAV major version, avoiding the `metadata_errors` TypeError without downgrading PyAV.
+The faster-whisper dependency is pinned to the upstream commit (`2ce7f9d7a9fbe315a5804a33bf7224d42e101174`) that handles the PyAV 19 `av.open` API change. It selects audio-open keyword arguments according to the installed PyAV major version, avoiding the `metadata_errors` TypeError without downgrading PyAV.
+
+**Network / Git Requirement**: Installing this pinned dependency requires having `git` installed on your machine and outbound internet access to GitHub during `pip install`.
 
 If updating an existing environment that already has the PyPI `faster-whisper==1.2.1` installed, pip may treat the pinned source as the same package version and leave the old wheel in place. In that case, force-install the exact pinned source:
 

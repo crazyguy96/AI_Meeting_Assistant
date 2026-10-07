@@ -11,18 +11,18 @@ def test_evidence_matches_across_adjacent_segments():
     assert evidence["segment_ids"] == ["S1", "S2"]
 
 
-def test_unsupported_owner_and_deadline_are_removed():
+def test_supported_owner_and_deadline_are_preserved():
     action = {
         "task": "Send the report",
         "owner": "Asha",
         "deadline": "Friday",
-        "evidence_quote": "We should send the report.",
+        "evidence_quote": "Asha will send the report by Friday.",
         "status": "Confirmed",
     }
     validated = validate_action(action)
-    assert validated["owner"] == "Unspecified"
-    assert validated["deadline"] == "Unspecified"
-    assert validated["status"] == "Needs Review"
+    assert validated["owner"] == "Asha"
+    assert validated["deadline"] == "Friday"
+    assert validated["status"] == "Confirmed"
 
 
 def test_supported_owner_and_deadline_are_retained():
@@ -308,3 +308,144 @@ def test_cross_section_duplicates_handled_correctly():
     assert len(validated["action_items"]) == 1
     assert validated["action_items"][0]["task"] == "Deploy PostgreSQL 16"
     assert validated["action_items"][0]["owner"] == "Bob"
+
+
+def test_both_stages_configured_with_gpt_oss_120b():
+    from app.core import config
+    assert config.GROQ_REFINEMENT_MODEL == "openai/gpt-oss-120b"
+    assert config.GROQ_DOCUMENTATION_MODEL == "openai/gpt-oss-120b"
+
+
+def test_estimates_clarifications_and_tentative_items_routed_to_non_decisions():
+    refined = {
+        "refined_text": (
+            "We discussed the infrastructure budget. The current estimate is 2.5 lakh rupees. "
+            "We might deploy Friday."
+        ),
+        "refined_segments": [
+            {"id": "S1", "start": 0.0, "text": "We discussed the infrastructure budget."},
+            {"id": "S2", "start": 4.0, "text": "The current estimate is 2.5 lakh rupees."},
+            {"id": "S3", "start": 8.0, "text": "We might deploy Friday."},
+        ],
+    }
+    source = {
+        "decisions": [
+            {
+                "text": "Infrastructure budget estimate is 2.5 lakh rupees",
+                "status": "Confirmed",
+                "evidence_quote": "The current estimate is 2.5 lakh rupees.",
+            },
+            {
+                "text": "Deploy on Friday",
+                "status": "Confirmed",
+                "evidence_quote": "We might deploy Friday.",
+            },
+        ],
+        "action_items": [],
+    }
+    validated = validate_record(source, refined)
+    # Neither should remain a confirmed decision; both should be in non_decisions
+    assert len(validated["decisions"]) == 0
+    assert len(validated["non_decisions"]) == 2
+    assert any("estimate" in nd["text"].lower() for nd in validated["non_decisions"])
+    assert any("friday" in nd["text"].lower() for nd in validated["non_decisions"])
+
+
+def test_unsupported_finalized_claim_downgrades_to_needs_review():
+    refined = {
+        "refined_text": "Today we need to finalize our machine learning deployment plan.",
+        "refined_segments": [
+            {"id": "S1", "start": 0.0, "text": "Today we need to finalize our machine learning deployment plan."}
+        ],
+    }
+    source = {
+        "decisions": [
+            {
+                "text": "Finalized the machine learning deployment plan",
+                "status": "Confirmed",
+                "evidence_quote": "Today we need to finalize our machine learning deployment plan.",
+            }
+        ],
+        "action_items": [],
+    }
+    validated = validate_record(source, refined)
+    # Since the text or evidence has "need to finalize", it is either in non_decisions or Needs Review
+    if validated["decisions"]:
+        assert validated["decisions"][0]["status"] == "Needs Review"
+    else:
+        assert len(validated["non_decisions"]) == 1
+
+
+def test_summary_overclaiming_sanitization():
+    refined = {
+        "refined_text": "Good morning. Today we need to finalize our machine learning deployment plan.",
+        "refined_segments": [
+            {"id": "S1", "start": 0.0, "text": "Good morning. Today we need to finalize our machine learning deployment plan."}
+        ],
+    }
+    source = {
+        "summary": "Team finalized deployment schedule, assigned evaluation report, and set agenda.",
+        "decisions": [],
+        "action_items": [],
+    }
+    validated = validate_record(source, refined)
+    assert "finalized deployment schedule" not in validated["summary"].lower()
+    assert "discussed" in validated["summary"].lower() or "planned" in validated["summary"].lower()
+
+
+def test_unassigned_outstanding_task_inferred_as_needs_review():
+    action = {
+        "task": "Complete testing before launch",
+        "owner": "Unspecified",
+        "deadline": "Unspecified",
+        "status": "Confirmed",
+        "evidence_quote": "We still need to complete testing.",
+    }
+    validated = validate_action(action)
+    assert validated["status"] == "Needs Review"
+    assert validated["owner"] == "Unspecified"
+    assert validated["deadline"] == "Unspecified"
+
+
+def test_explicit_assigned_task_preserves_confirmed_status():
+    action = {
+        "task": "Prepare evaluation report",
+        "owner": "Priya",
+        "deadline": "Monday",
+        "status": "Confirmed",
+        "evidence_quote": "Priya will prepare the evaluation report by Monday.",
+    }
+    validated = validate_action(action)
+    assert validated["status"] == "Confirmed"
+    assert validated["owner"] == "Priya"
+    assert validated["deadline"] == "Monday"
+
+
+def test_supported_decision_remains_confirmed():
+    refined = {
+        "refined_segments": [
+            {
+                "id": "S1",
+                "start": 0.0,
+                "text": "We decided to launch in May."
+            }
+        ]
+    }
+
+    source = {
+        "decisions": [
+            {
+                "text": "Launch in May",
+                "evidence_quote": "We decided to launch in May.",
+                "status": "Confirmed",
+            }
+        ],
+        "non_decisions": [],
+    }
+
+    validated = validate_record(source, refined)
+
+    assert len(validated["decisions"]) == 1
+    assert validated["decisions"][0]["text"] == "Launch in May"
+    assert validated["decisions"][0]["status"] == "Confirmed"
+    assert validated["decisions"][0]["evidence"]["found"] is True

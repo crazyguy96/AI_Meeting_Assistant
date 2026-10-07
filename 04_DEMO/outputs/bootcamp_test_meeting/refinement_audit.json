@@ -1,8 +1,9 @@
 {
   "glossary": [
+    "PGvector",
+    "PostgreSQL 16",
     "PyTorch",
     "PostgreSQL",
-    "PGvector",
     "PostgreSQL version 16",
     "Rahul",
     "Priya",
@@ -10,14 +11,7 @@
     "recall",
     "F1 score",
     "GPU",
-    "latency",
-    "machine learning",
-    "deployment",
-    "evaluation report",
-    "infrastructure budget",
-    "lakh rupees",
-    "model",
-    "testing"
+    "lakh rupees"
   ],
   "proposed_edits": [],
   "applied_edits": [],

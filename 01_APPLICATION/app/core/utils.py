@@ -39,11 +39,19 @@ def render_markdown(record: dict[str, Any]) -> str:
         f"- {item.get('text', '')}" for item in record.get("non_decisions", [])
     )
     lines.extend(["", "## Action Items"])
-    lines.extend(
-        f"- {item.get('task', '')} — Owner: {item.get('owner', 'Unspecified')}; "
-        f"Deadline: {item.get('deadline', 'Unspecified')}"
-        for item in record.get("action_items", [])
-    )
+    for item in record.get("action_items", []):
+        task = item.get("task", "")
+        owner = item.get("owner", "Unspecified")
+        deadline = item.get("deadline", "Unspecified")
+        status = item.get("status", "Needs Review")
+        evidence = item.get("evidence_quote", "Unspecified")
+        action_line = (
+            f"- {task} — Owner: {owner}; Deadline: {deadline}; "
+            f"Status: {status} | Evidence: {evidence}"
+        )
+        if item.get("owner_note"):
+            action_line += f" ({item['owner_note']})"
+        lines.append(action_line)
     for key, heading in (
         ("discussion_points", "Discussion Points"),
         ("open_questions", "Open Questions"),

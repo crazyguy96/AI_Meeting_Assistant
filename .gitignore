@@ -6,7 +6,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 01_APPLICATION/outputs/
-outputs/
+!04_DEMO/outputs/
 *.tmp
 *.temp
 *.log

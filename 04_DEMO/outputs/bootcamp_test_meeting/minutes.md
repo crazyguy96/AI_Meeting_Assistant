@@ -1,9 +1,9 @@
 # Meeting Minutes
 
-- Finalize ML deployment plan
-- Using PyTorch and PostgreSQL with PGvector
-- Database migration to PostgreSQL 16 proposed by Rahul
-- No deployment of new model this Friday
-- Priya to prepare evaluation report by Monday including precision, recall, F1
-- Infrastructure budget estimate corrected to 2.5 lakh rupees
-- Next meeting: review latency results and decide on GPU configuration
+- Current ML stack uses PyTorch and PostgreSQL with PGvector
+- Proposal to migrate database to PostgreSQL 16
+- Decision not to deploy new model this Friday
+- Budget estimate clarified as 2.5 lakh rupees
+- Testing still pending
+- Priya assigned to prepare evaluation report by Monday
+- Next meeting will review latency results and GPU configuration

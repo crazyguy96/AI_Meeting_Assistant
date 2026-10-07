@@ -1,0 +1,244 @@
+{
+  "glossary": [
+    "Frank Lyons",
+    "Gary Cope",
+    "Carl Madden",
+    "Joey Ballon-Weasley",
+    "Clive",
+    "Janet Bowers",
+    "Rita",
+    "Jason Somerville",
+    "Sarah Bryant",
+    "Lucy Strokes",
+    "Sue Carpenter",
+    "Julian Geddes",
+    "Yorkshire and Shipman",
+    "Comet software",
+    "IT system",
+    "priority parking",
+    "HR manager",
+    "sales director",
+    "project and program manager",
+    "managing director",
+    "PA",
+    "new team member",
+    "staff morale",
+    "staff appraisal",
+    "anonymous questionnaire",
+    "password",
+    "client meetings",
+    "visitor parking",
+    "garage",
+    "bicycle",
+    "go-karting",
+    "awards night",
+    "party pilates",
+    "darts",
+    "drinking evens",
+    "IT issues",
+    "F-Drive",
+    "PCP",
+    "logative rebix",
+    "external energy source",
+    "electricity supplier",
+    "Frank",
+    "Sue",
+    "Gary",
+    "Julian",
+    "balance sheet",
+    "contract sales",
+    "handset sales",
+    "utility bill",
+    "red",
+    "black",
+    "dishwasher",
+    "St Albans"
+  ],
+  "proposed_edits": [
+    {
+      "segment_id": "S0005",
+      "from": "Gary, Cope",
+      "to": "Gary Cope",
+      "reason": "comma error in name",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0090",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "full name per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0115",
+      "from": "Sue",
+      "to": "Sue Carpenter",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0115",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0117",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0123",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0147",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0150",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0155",
+      "from": "Sue",
+      "to": "Sue Carpenter",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0156",
+      "from": "Sue",
+      "to": "Sue Carpenter",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0206",
+      "from": "Lucy and I produced an anonymous questionnaire",
+      "to": "Lucy Strokes and I produced an anonymous questionnaire",
+      "reason": "Lucy is a glossary term (Lucy Strokes)",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0210",
+      "from": "And Lucy, I don't mean to pick on you,",
+      "to": "And Lucy Strokes, I don't mean to pick on you,",
+      "reason": "Lucy is a glossary term (Lucy Strokes)",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0385",
+      "from": "bike",
+      "to": "bicycle",
+      "reason": "glossary term",
+      "confidence": 0.99
+    }
+  ],
+  "applied_edits": [
+    {
+      "segment_id": "S0005",
+      "from": "Gary, Cope",
+      "to": "Gary Cope",
+      "reason": "comma error in name",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0090",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "full name per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0115",
+      "from": "Sue",
+      "to": "Sue Carpenter",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0115",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0117",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0123",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0147",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0150",
+      "from": "Jason",
+      "to": "Jason Somerville",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0155",
+      "from": "Sue",
+      "to": "Sue Carpenter",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0156",
+      "from": "Sue",
+      "to": "Sue Carpenter",
+      "reason": "Name correction per glossary",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0206",
+      "from": "Lucy and I produced an anonymous questionnaire",
+      "to": "Lucy Strokes and I produced an anonymous questionnaire",
+      "reason": "Lucy is a glossary term (Lucy Strokes)",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0210",
+      "from": "And Lucy, I don't mean to pick on you,",
+      "to": "And Lucy Strokes, I don't mean to pick on you,",
+      "reason": "Lucy is a glossary term (Lucy Strokes)",
+      "confidence": 0.99
+    },
+    {
+      "segment_id": "S0385",
+      "from": "bike",
+      "to": "bicycle",
+      "reason": "glossary term",
+      "confidence": 0.99
+    }
+  ],
+  "rejected_edits": []
+}

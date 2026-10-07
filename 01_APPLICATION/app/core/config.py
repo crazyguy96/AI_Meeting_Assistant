@@ -54,7 +54,7 @@ GROQ_REFINEMENT_MODEL = os.getenv(
     "GROQ_REFINEMENT_MODEL", "openai/gpt-oss-120b"
 )
 GROQ_DOCUMENTATION_MODEL = os.getenv(
-    "GROQ_DOCUMENTATION_MODEL", "openai/gpt-oss-20b"
+    "GROQ_DOCUMENTATION_MODEL", "openai/gpt-oss-120b"
 )
 
 # Audio validation thresholds and constraints

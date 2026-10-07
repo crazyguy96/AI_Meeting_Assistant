@@ -369,7 +369,7 @@ def test_documentation_generate_record_token_aware_chunking(monkeypatch, capsys)
     chunks_called = []
 
     def fake_groq_json(system_prompt, user_prompt, model, max_tokens, retries):
-        assert model == "openai/gpt-oss-20b"
+        assert model == "openai/gpt-oss-120b"
         assert max_tokens == 2048
         chunks_called.append(user_prompt)
         return {
@@ -865,3 +865,106 @@ def test_cross_chunk_context_recovery_in_generate_record(monkeypatch):
     # Final record recovered the action item with context
     assert len(record["action_items"]) == 1
     assert record["action_items"][0]["deadline"] == "Friday"
+
+
+def test_markdown_and_json_action_item_consistency():
+    from app.core.utils import render_markdown
+
+    record = {
+        "meeting_title": "Sprint Review",
+        "summary": "Team aligned on release.",
+        "minutes": ["Reviewed features."],
+        "decisions": [
+            {
+                "text": "Ship on Monday",
+                "status": "Confirmed",
+                "evidence_quote": "We will ship on Monday.",
+            }
+        ],
+        "non_decisions": [],
+        "action_items": [
+            {
+                "task": "Prepare deployment script",
+                "owner": "Priya",
+                "deadline": "Sunday",
+                "status": "Confirmed",
+                "evidence_quote": "Priya will prepare deployment script by Sunday.",
+            },
+            {
+                "task": "Complete load testing",
+                "owner": "Unspecified",
+                "deadline": "Unspecified",
+                "status": "Needs Review",
+                "evidence_quote": "We still need to complete testing.",
+            },
+        ],
+    }
+    md = render_markdown(record)
+    for action in record["action_items"]:
+        # Verify all important fields from JSON are represented in Markdown
+        assert action["task"] in md
+        assert action["owner"] in md
+        assert action["deadline"] in md
+        assert action["status"] in md
+        assert action["evidence_quote"] in md
+
+
+def test_refinement_api_failure_fallback_continues_pipeline(tmp_path, monkeypatch):
+    import wave
+    from types import SimpleNamespace
+    from pathlib import Path
+    from app.pipeline import transcription, refinement, documentation
+
+    wav = tmp_path / "valid.wav"
+    with wave.open(str(wav), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(16000)
+        wf.writeframes(b"\x00\x05" * 16000)
+
+    class FakeWhisper:
+        def transcribe(self, file_path, language, **kwargs):
+            return iter([
+                SimpleNamespace(start=0.0, end=1.0, text="Good morning."),
+                SimpleNamespace(start=1.0, end=2.0, text="We still need to complete testing."),
+            ]), SimpleNamespace(language="en")
+
+    monkeypatch.setattr(transcription, "get_whisper_model", lambda: FakeWhisper())
+
+    # Simulate Groq API failure (e.g. RateLimit / Timeout / 500) during refinement
+    def failing_groq(*args, **kwargs):
+        raise RuntimeError("Groq 429 Too Many Requests - rate limit exceeded")
+
+    monkeypatch.setattr(refinement, "groq_json", failing_groq)
+
+    # Documentation succeeds
+    def mock_doc_groq(*args, **kwargs):
+        return {
+            "meeting_title": "Daily Standup",
+            "summary": "Team discussed testing.",
+            "minutes": ["Testing is pending."],
+            "decisions": [],
+            "non_decisions": [],
+            "action_items": [
+                {
+                    "task": "Complete testing",
+                    "owner": "Unspecified",
+                    "deadline": "Unspecified",
+                    "status": "Needs Review",
+                    "evidence_quote": "We still need to complete testing.",
+                }
+            ],
+            "discussion_points": [],
+            "open_questions": [],
+        }
+
+    monkeypatch.setattr(documentation, "groq_json", mock_doc_groq)
+
+    # The entire pipeline should continue and complete gracefully without raising
+    result = main.process_meeting(wav)
+    assert result["refinement_failed"] is True
+    assert result.get("refinement_warning") is not None
+    assert "Good morning" in result["raw_transcript"]
+    assert "complete testing" in result["refined_transcript"]
+    assert len(result["record"]["action_items"]) == 1
+    assert Path(result["archive_path"]).exists()

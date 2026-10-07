@@ -463,17 +463,44 @@ def refine_transcription(
             + json.dumps(segments, ensure_ascii=False)
         )
 
-    batches = _chunk_segments(
-        raw_segments,
-        system_prompt,
-        make_prompt,
-    )
+    batches: list[list[dict[str, Any]]] = []
+    try:
+        batches = _chunk_segments(
+            raw_segments,
+            system_prompt,
+            make_prompt,
+        )
+    except Exception as exc:
+        sanitized_err = sanitize_exception(exc)
+        logger.warning(
+            "Segment chunking failed during refinement (%s). Preserving unedited raw transcript.",
+            sanitized_err,
+        )
+        return {
+            "refined_text": raw_text,
+            "refined_segments": [dict(s) for s in raw_segments],
+            "refined_timestamped": format_timestamped(raw_segments) or raw_text,
+            "glossary": glossary,
+            "proposed_edits": [],
+            "applied_edits": [],
+            "rejected_edits": [],
+            "backend": "Groq",
+            "model": GROQ_REFINEMENT_MODEL,
+            "refinement_failed": True,
+            "refinement_warning": (
+                f"Transcript chunking failed ({type(exc).__name__}). "
+                "The pipeline continued safely using the unedited raw transcript."
+            ),
+        }
 
     segments = [dict(segment) for segment in raw_segments]
     applied: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     proposed_edits: list[dict[str, Any]] = []
     total_batches = len(batches)
+    refinement_failed = False
+    refinement_warning: str | None = None
+
     for batch_idx, batch in enumerate(batches, 1):
         print(f"[STAGE] refinement chunk {batch_idx}/{total_batches}", flush=True)
         try:
@@ -483,9 +510,27 @@ def refine_transcription(
                 GROQ_REFINEMENT_MODEL,
             )
         except Exception as exc:
+            sanitized_err = sanitize_exception(exc)
             print(f"[ERROR] stage=refinement chunk={batch_idx}/{total_batches} model={GROQ_REFINEMENT_MODEL}", flush=True)
-            print(f"[ERROR] exception={sanitize_exception(exc)}", flush=True)
-            raise
+            print(f"[ERROR] exception={sanitized_err}", flush=True)
+            logger.warning(
+                "Refinement chunk %d/%d failed (%s). Falling back to unedited raw transcript.",
+                batch_idx,
+                total_batches,
+                sanitized_err,
+            )
+            refinement_failed = True
+            refinement_warning = (
+                f"Transcript refinement encountered an error ({type(exc).__name__}). "
+                "The pipeline continued safely using the unedited raw transcript."
+            )
+            # Revert segments to original unedited raw segments to prevent partial edits
+            segments = [dict(segment) for segment in raw_segments]
+            applied = []
+            proposed_edits = []
+            rejected = []
+            break
+
         for edit in result.get("edits", []):
             source = str(edit.get("from", ""))
             target = str(edit.get("to", ""))
@@ -510,7 +555,7 @@ def refine_transcription(
 
     refined_text = " ".join(segment["text"] for segment in segments)
     refined_timestamped = format_timestamped(segments) or refined_text
-    return {
+    output_result = {
         "refined_text": refined_text,
         "refined_segments": segments,
         "refined_timestamped": refined_timestamped,
@@ -521,3 +566,7 @@ def refine_transcription(
         "backend": "Groq",
         "model": GROQ_REFINEMENT_MODEL,
     }
+    if refinement_failed:
+        output_result["refinement_failed"] = True
+        output_result["refinement_warning"] = refinement_warning
+    return output_result
