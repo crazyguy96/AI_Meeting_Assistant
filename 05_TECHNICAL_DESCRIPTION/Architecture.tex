@@ -75,7 +75,7 @@ Recorded meetings contain decisions, technical terminology, commitments, deadlin
 \begin{card}
 \centering
 \textbf{AUDIO}\\[-1pt] $\downarrow$\\[-2pt]
-\textbf{faster-whisper small + Silero VAD}\\[-1pt] $\downarrow$\\[-2pt]
+\textbf{faster-whisper large-v3 / small + Silero VAD}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{RAW TRANSCRIPT}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{GPT-OSS-20B}\\[-1pt]{\scriptsize Domain Refinement}\\[-2pt]$\downarrow$\\[-2pt]
 \textbf{REFINED TRANSCRIPT}\\[-1pt] $\downarrow$\\[-2pt]
@@ -106,7 +106,7 @@ Each model has one clearly defined responsibility, keeping transcription, refine
 \begin{tikzpicture}[node distance=5mm and 4mm, every node/.style={font=\scriptsize}, box/.style={draw=rulegray,fill=softgray,rounded corners=1.2mm,minimum width=2.45cm,minimum height=0.65cm,align=center}, dark/.style={draw=ink,fill=ink,text=white,rounded corners=1.2mm,minimum width=2.45cm,minimum height=0.65cm,align=center}]
 \node[dark] (a) {MEETING AUDIO};
 \node[box,right=of a] (b) {Input\\Validation};
-\node[dark,right=of b] (c) {FASTER-WHISPER SMALL + VAD\\\scriptsize Audio → Text};
+\node[dark,right=of b] (c) {FASTER-WHISPER LARGE-V3 / SMALL + VAD\\\scriptsize GPU / CPU → Text};
 \node[box,right=of c] (d) {Raw\\Transcript};
 \node[dark,right=of d] (e) {GPT-OSS-20B\\\tiny Refinement};
 \node[box,below=of e] (f) {Refined\\Transcript};
@@ -160,7 +160,7 @@ Raw transcript answers \textit{what the speech recognizer heard}; refinement ans
 
 \begin{minipage}[t]{0.47\textwidth}
 \vspace{0pt}
-\begin{darkcard}\centering\textbf{faster-whisper small + Silero VAD}\par\vspace{1pt}\scriptsize Audio → Text\end{darkcard}
+\begin{darkcard}\centering\textbf{faster-whisper large-v3 / small + Silero VAD}\par\vspace{1pt}\scriptsize Audio → Text\end{darkcard}
 \begin{card}
 \textbf{Input:} recorded English meeting audio\\
 \textbf{Output:} timestamped transcript segments\\[2pt]
@@ -181,12 +181,18 @@ The STT stage is deliberately isolated from the Groq language-model stages. It c
 \end{minipage}
 
 \vspace{4pt}
+\begin{card}
+\textbf{Hardware-aware defaults}
+\quad CUDA available → \texttt{large-v3 + cuda + float16}; CPU fallback → \texttt{small + cpu + int8}. Environment variables \texttt{WHISPER\_MODEL}, \texttt{WHISPER\_DEVICE} and \texttt{WHISPER\_COMPUTE\_TYPE} override these defaults. The transcription call also sets \texttt{condition\_on\_previous\_text=False} to prevent repetitive conditioning loops on long meetings.
+\end{card}
+
+\vspace{4pt}
 \section*{STT Data Flow}
 \vspace{2pt}
 \begin{center}
 \begin{tikzpicture}[every node/.style={font=\scriptsize}, n/.style={draw=rulegray,fill=softgray,rounded corners=1.2mm,minimum width=2.75cm,minimum height=.82cm,align=center,inner sep=2pt}, dn/.style={draw=ink,fill=ink,text=white,rounded corners=1.2mm,minimum width=2.95cm,minimum height=.82cm,align=center,inner sep=2pt}]
 \node[n]  (a) at (0,0)       {MEETING\\AUDIO};
-\node[dn] (b) at (3.25,0)  {FASTER-WHISPER SMALL\\+ SILERO VAD\\\tiny Audio → Text};
+\node[dn] (b) at (3.25,0)  {FASTER-WHISPER LARGE-V3 / SMALL\\+ SILERO VAD\\\tiny GPU / CPU · Audio → Text};
 \node[n]  (c) at (6.55,0)  {TIMESTAMPED\\SEGMENTS};
 \node[n]  (d) at (9.85,0)  {RAW\\TRANSCRIPT};
 \draw[-{Latex[length=1.8mm,width=1.2mm]},line width=.7pt] (a.east)--(b.west);
@@ -194,6 +200,8 @@ The STT stage is deliberately isolated from the Groq language-model stages. It c
 \draw[-{Latex[length=1.8mm,width=1.2mm]},line width=.7pt] (c.east)--(d.west);
 \end{tikzpicture}
 \end{center}
+
+\begin{notecard}\textbf{Repetition guard}\quad \texttt{condition\_on\_previous\_text=False} prevents conditioning loops and repetitive hallucinations across long meetings while preserving VAD, glossary prompting and segment timestamps.\end{notecard}
 
 \vspace{4pt}
 \twocard{What is preserved?}{Segment ordering, transcript text and timing are retained before any refinement. The raw artifact is not silently replaced by later processing.}{Why it matters}{\small A final extraction error can be traced back to the speech-recognition output rather than being hidden inside a single final answer.}
@@ -248,13 +256,9 @@ The raw transcript is not merely an intermediate variable. It is an explicit pro
 \end{tabularx}
 
 \vspace{4pt}
-\begin{card}
-\textbf{What STT deliberately does not do}\par It does not summarize, infer decisions, identify owners, correct domain terminology through an LLM, or generate meeting minutes. Those operations begin only after a raw transcript exists.
-\end{card}
-
-\vspace{8pt}
 \begin{darkcard}
-\textbf{Stage contract}\quad \textsc{Audio → timestamped segments → raw transcript. No summarization. No semantic rewriting.}
+\textbf{Stage contract}\quad \textsc{Audio → timestamped segments → raw transcript. No summarization. No semantic rewriting.}\par
+\small The STT stage does not infer decisions, identify owners, correct domain terminology through an LLM, or generate meeting minutes.
 \end{darkcard}
 \newpage
 
@@ -522,7 +526,7 @@ Evidence validation & Reject unsupported claim & Plausible language is not evide
 \vspace{4pt}
 \section*{Long-Recording Robustness}
 \begin{card}
-Long-recording behavior is protected by token-aware chunking, sequential reconstruction and structured-output recovery. The current verification set explicitly exercises these failure modes rather than relying on a single oversized request.
+Long-recording behavior is protected by token-aware chunking, sequential reconstruction and structured-output recovery. Documentation requests use a 2,600-token input budget and 2,048-token output budget, while the STT layer disables previous-text conditioning to reduce repetition loops. The current verification set explicitly exercises these failure modes rather than relying on a single oversized request.
 \end{card}
 
 \vspace{4pt}
@@ -551,10 +555,10 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 \newpage
 
 % ================================================================
-% PAGE 6 — UI + TESTING + STACK + FINAL STATUS
-{\fontsize{22}{25}\selectfont\bfseries UI + Testing + Final Status\par}
-\tagline{A compact evaluator surface backed by automated tests and real end-to-end verification.}
-\vspace{4pt}
+% PAGE 6 — UI + TESTING + STACK + FINAL STATUS\n\small\n\enlargethispage{1.25in}
+{\fontsize{21}{23}\selectfont\bfseries UI + Testing + Final Status\par}
+\tagline{A compact evaluator surface backed by automated tests and end-to-end verification.}
+\vspace{1.5pt}
 
 \begin{minipage}[t]{0.53\textwidth}
 \section*{Human-Centered Interface}
@@ -562,7 +566,7 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 \centering\textbf{Raw Transcript}\hspace{8pt}|\hspace{8pt}\textbf{Refined}\hspace{8pt}|\hspace{8pt}\textbf{Final Output}
 \end{card}
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-\item \textbf{Raw Transcript} — original timestamped faster-whisper small + VAD output.
+\item \textbf{Raw Transcript} — original timestamped faster-whisper output with Silero VAD and hardware-aware model resolution.
 \item \textbf{Refined Transcript} — domain-corrected transcript with preserved meaning.
 \item \textbf{Final Output} — summary, minutes, decisions, action items and evidence.
 \end{itemize}
@@ -576,14 +580,14 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 \end{card}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.44\textwidth}
-\begin{darkcard}\centering\fontsize{20}{22}\selectfont\bfseries 104 / 104\par\vspace{1pt}\normalsize automated tests passing\end{darkcard}
+\begin{darkcard}\centering\fontsize{20}{22}\selectfont\bfseries 105 / 105\par\vspace{1pt}\normalsize automated tests passing\end{darkcard}
 \begin{card}\small
 \textbf{Coverage}\par\vspace{1pt}
 Evidence · Pipeline · Refinement · Safety · UI
 \end{card}
 \begin{card}\small
 \textbf{Real-meeting verification}\par\vspace{1pt}
-Current verification covers audio validation, token-aware chunking, refinement, documentation, evidence validation and export through the automated regression suite.
+Current verification covers audio validation, token-aware chunking, refinement, documentation, evidence validation and export through the automated regression suite. Three demo recordings and their output packages are included.
 \end{card}
 \begin{darkcard}\small
 \textbf{Evaluator path}\par\vspace{1pt}
@@ -594,7 +598,7 @@ Current verification covers audio validation, token-aware chunking, refinement, 
 \end{darkcard}
 \end{minipage}
 
-\vspace{4pt}
+\vspace{1.5pt}
 \section*{Test Suite}
 \scriptsize
 \begin{tabularx}{\textwidth}{@{}l X@{}}
@@ -609,7 +613,7 @@ UI & Status streaming, errors and three-stage output layout.\\
 \bottomrule
 \end{tabularx}
 
-\vspace{4pt}
+\vspace{1.5pt}
 \begin{minipage}[t]{0.46\textwidth}
 \section*{Downloadable Output Contract}
 \begin{card}\ttfamily\scriptsize
@@ -626,31 +630,30 @@ refinement\_audit.json
 \begin{minipage}[t]{0.51\textwidth}
 \section*{Technology Stack}
 \scriptsize
-\begin{tabularx}{\linewidth}{@{}llX@{}}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
 \toprule
-\textbf{Layer} & \textbf{Technology} & \textbf{Role}\\
+\textbf{Layer} & \textbf{Technology / Role}\\
 \midrule
-Language & Python & Pipeline implementation\\
-Speech-to-text & faster-whisper small + Silero VAD & Audio → raw transcript\\
-Refinement & GPT-OSS-20B & Domain-aware correction\\
-Documentation & GPT-OSS-120B & Structured extraction\\
-Inference & Groq & Hosted LLM inference\\
-UI & Gradio & Upload, status, inspection, export\\
-Output & JSON / Schema & Validated machine-readable record\\
-Testing & Pytest & Regression suite\\
+Language & Python — pipeline implementation\\
+Speech-to-text & faster-whisper \texttt{large-v3 + float16} GPU / \texttt{small + int8} CPU + Silero VAD — audio → raw transcript\\
+Refinement & GPT-OSS-20B — domain-aware correction\\
+Documentation & GPT-OSS-120B — structured extraction\\
+Inference & Groq — hosted LLM inference\\
+UI & Gradio — upload, status, inspection, export\\
+Output & JSON / Schema — validated machine-readable record\\
+Testing & Pytest — regression suite\\
 \bottomrule
 \end{tabularx}
 \end{minipage}
-
-\vspace{4pt}
+\vspace{1.5pt}
 \section*{PS / Requirement Coverage}
 \scriptsize
 \begin{center}
-\begin{tabularx}{0.98\textwidth}{@{}l X l@{}}
+{\renewcommand{\arraystretch}{0.72}\begin{tabularx}{0.98\textwidth}{@{}l X l@{}}
 \toprule
 \textbf{Requirement} & \textbf{Implementation} & \textbf{Status}\\
 \midrule
-English meeting audio & faster-whisper small + Silero VAD & \textbf{YES}\\
+English meeting audio & faster-whisper large-v3 / small + Silero VAD & \textbf{YES}\\
 Raw transcript & Dedicated preserved artifact & \textbf{YES}\\
 Domain refinement & GPT-OSS-20B & \textbf{YES}\\
 Separate documentation stage & GPT-OSS-120B & \textbf{YES}\\
@@ -662,25 +665,23 @@ Interactive UI & Gradio & \textbf{YES}\\
 Downloads & TXT / MD / JSON & \textbf{YES}\\
 New recordings & Dynamic processing pipeline & \textbf{YES}\\
 \bottomrule
-\end{tabularx}
+\end{tabularx}}
 \end{center}
 \normalsize
 
-\vspace{4pt}
-\begin{tabularx}{\textwidth}{@{}XXX@{}}
-\begin{card}\textbf{UI reliability}\par\small Clear stage-level errors, readable transcript text, explicit light-theme styling and separate raw / refined / final views.
+\vspace{1.5pt}
+\begin{tabularx}{\textwidth}{@{}XX@{}}
+\begin{card}[top=3pt,bottom=3pt]\textbf{UI reliability}\par\small Clear stage-level errors, readable transcript text, explicit light-theme styling and separate raw / refined / final views.
 \end{card}&
-\begin{card}\textbf{Evidence boundary}\par\small Unsupported owners, deadlines or decisions are not invented. Proposal, suggestion and mention remain distinct from commitment.
-\end{card}&
-\begin{card}\textbf{Current boundary}\par\small The submitted system processes recorded English meeting audio through the validated multimodel pipeline. Unsupported integrations and future features are outside the current architecture.
+\begin{card}[top=3pt,bottom=3pt]\textbf{Evidence boundary}\par\small Unsupported owners, deadlines or decisions are not invented. Proposal, suggestion and mention remain distinct from commitment.
 \end{card}
 \end{tabularx}
 
-\vspace{8pt}
+\vspace{2pt}
 \begin{darkcard}
 \centering\small
 \textbf{Final verification}\quad Upload → Transcribe → Refine → Document → Validate → Export.\\[-1pt]
-The system preserves what was said first, then improves and structures it without inventing unsupported meeting facts.
+The system processes recorded English meeting audio through the validated multimodel pipeline and preserves what was said first, then improves and structures it without inventing unsupported meeting facts.
 \end{darkcard}
 
 \end{document}
