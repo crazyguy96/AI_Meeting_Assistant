@@ -1,0 +1,15 @@
+[
+  {
+    "task": "Prepare meal proposals for review",
+    "owner": "Unspecified",
+    "deadline": "Unspecified",
+    "status": "Needs Review",
+    "evidence_quote": "Various participants shared detailed meal suggestions.",
+    "evidence": {
+      "found": false,
+      "timestamp": "Unknown",
+      "segment_ids": [],
+      "score": 0.462
+    }
+  }
+]

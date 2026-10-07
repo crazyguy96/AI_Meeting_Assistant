@@ -59,7 +59,7 @@ The Gradio interface will start locally.
 pytest 06_TESTS
 ```
 
-**Current verification: 99 tests passing.**
+**Current verification: 105 tests passing.**
 
 ---
 
@@ -107,7 +107,11 @@ FINAL MEETING RECORD
 
 ### Stage 1 — Speech Recognition
 
-**faster-whisper (small)** performs local English speech-to-text with Silero VAD filtering and domain glossary prompting, producing timestamped segments.
+**faster-whisper** performs local English speech-to-text with Silero VAD filtering and domain glossary prompting, producing timestamped segments.
+
+- **GPU Default (CUDA available)**: `large-v3` + `cuda` + `float16`
+- **CPU Fallback (CUDA unavailable)**: `small` + `cpu` + `int8`
+- **Repetition & Error Propagation Guard**: `condition_on_previous_text=False` is explicitly set to reduce repetition and error propagation across long recordings.
 
 ```text
 Meeting Audio
@@ -179,17 +183,12 @@ The project follows a simple rule:
 
 ### Refinement safety
 
-Important information is protected during refinement:
+Important factual information is strictly protected during transcript refinement:
 
-- names
-- numbers
-- monetary values
-- negation
-- commitments
-- ordering
-- technical terminology
-
-For example:
+- **Numeric & Factual Protection**: Digits, scales, and spoken number words (`NUM_WORDS`: 0–19, tens, scale terms) are compared bidirectionally; changes such as `twelve` → `twenty` or `fifteen` → `fifty` are immediately rejected.
+- **Phonetic Fidelity Gate**: Deterministic consonant-class phonetic skeleton analysis allows genuine acoustic and technical corrections (`post gress` → `Postgres`, `cooper netties` → `Kubernetes`), while strictly rejecting unsupported semantic paraphrasing (`smiley fries` → `smiley face potatoes`).
+- **Entity & Name Protection**: Technical terms starting lowercase in speech recognition are permitted to capitalize, but genuine spoken person names are safeguarded. Unspoken surname expansions via glossary (`Jason` → `Jason Somerville`) are rejected unless supported in the segment.
+- **Negation & Commitment Integrity**: Negations (`not`, `never`, `won't`) and commitments cannot be inverted or softened. For example:
 
 ```text
 "We will not deploy this version."
@@ -234,12 +233,12 @@ Long transcripts can exceed the practical context budget of a single LLM request
    - Falls back to sentence boundaries (`. ! ?`).
    - Uses word boundaries as final fallback to never split sentences unnecessarily.
 2. **Configurable Token Budgets**:
-   - `DOCUMENTATION_MAX_INPUT_TOKENS` (default: 6,000) governs chunk sizing.
-   - `DOCUMENTATION_MAX_OUTPUT_TOKENS` governs output generation headroom.
+   - `DOCUMENTATION_MAX_INPUT_TOKENS` (default: 2,600) governs chunk sizing.
+   - `DOCUMENTATION_MAX_OUTPUT_TOKENS` (default: 2,048) governs output generation headroom.
 3. **Cross-Chunk Context**:
    - `DOCUMENTATION_CHUNK_OVERLAP_WORDS` (default: 200 words) injects preceding dialogue context so boundary-spanning decisions and evidence are not lost.
 4. **Deterministic Near-Duplicate Merging**:
-   - Merges identical or near-identical decisions and actions spanning adjacent chunks using deterministic token similarity and protected-token safeguards without heavy ML dependencies.
+   - Merges identical or near-identical decisions and actions spanning adjacent chunks using deterministic token similarity, number-word, and entity safeguards. Actions with conflicting explicit deadlines, differing number words, or differing owners are strictly kept distinct.
 
 ---
 
@@ -325,35 +324,26 @@ pytest 06_TESTS
 Current verification:
 
 ```text
-99 passed
+105 passed
 ```
 
 Coverage includes:
 
 | Test | Focus |
 |---|---|
-| `test_pipeline.py` | validation, pipeline execution, outputs |
-| `test_refinement.py` | chunking, ordering, safety, retries, fallback |
-| `test_safety.py` | negation, monetary values, semantic preservation |
-| `test_evidence.py` | evidence matching and decision classification |
+| `test_pipeline.py` | audio validation, leading silence, hardware detection, chunking, pipeline execution, outputs |
+| `test_refinement.py` | token chunking, ordering, safety, retries, fallback |
+| `test_safety.py` | number-word protection, phonetic fidelity gate, unspoken name guards, negation, monetary values |
+| `test_evidence.py` | evidence matching, deduplication conflicts, decision classification, dual-model configuration |
 | `test_ui.py` | status streaming, errors, output layout |
 
 ---
 
-## 📊 End-to-End Verification
+## 📊 Long-Recording Robustness & Verification
 
-A real approximately 15-minute meeting was processed successfully through the complete pipeline.
+Long-recording behavior is protected by token-aware chunking, sequential reconstruction, and structured-output recovery. The automated test suite explicitly exercises these failure modes, boundary transitions, and fallback behaviors rather than relying on a single oversized request.
 
-Verified output:
-
-```text
-Raw transcript      → 14,073 characters
-Refined transcript  → 14,104 characters
-Confirmed decisions → 2
-Action items        → 4
-```
-
-The run reached:
+The full pipeline executes through explicit, verifiable stages:
 
 ```text
 received → validated → transcribing → raw_ready
@@ -412,7 +402,7 @@ See `07_SUBMISSION/DEMO.md` for the evaluator-facing demo workflow.
 | Layer | Technology |
 |---|---|
 | Language | Python |
-| Speech-to-Text | faster-whisper small + Silero VAD |
+| Speech-to-Text | faster-whisper (GPU: large-v3 + float16, CPU: small + int8) + Silero VAD |
 | Refinement | `openai/gpt-oss-20b` |
 | Documentation | `openai/gpt-oss-120b` |
 | LLM Inference | Groq |
@@ -422,7 +412,7 @@ See `07_SUBMISSION/DEMO.md` for the evaluator-facing demo workflow.
 
 ### Why faster-whisper?
 
-Local STT keeps transcription independent from the hosted LLM stages and provides timestamped segments without requiring a separate hosted transcription quota.
+Local STT keeps transcription independent from the hosted LLM stages and provides timestamped segments without requiring a separate hosted transcription quota. The system dynamically selects hardware-aware defaults: when a CUDA GPU is detected, it runs `large-v3` with `float16` for high acoustic precision, while providing a lightweight `small` with `int8` fallback for CPU environments. Furthermore, `condition_on_previous_text=False` is explicitly configured to prevent repetition loops and compounding errors across multi-chunk long recordings.
 
 ### Why Groq?
 

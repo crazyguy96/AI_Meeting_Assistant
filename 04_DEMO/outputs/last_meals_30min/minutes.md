@@ -1,0 +1,32 @@
+# Meeting Minutes
+
+- Ryan Treyhan's last meal: salmon nigiri with wasabi, hamburger with ketchup only, root beer, and tiramisu
+- Discussion of Ryan's preference for no vegetables and comparison of burger vs sushi
+- Nick's last meal suggestion: soup dumplings, beef Wellington 2.0, cheese souffle, French macarons, placed in D tier
+- Mark Robert's elaborate meal rated A tier
+- Jesser's last meal: grilled cheese bun cheeseburger, smiley face potatoes, ice glass root beer float, creme brulee french toast with ice cream
+- Reviewed and rated Kai's proposed last meal, assigning it an S‑tier
+- Discussed Sam and Colby’s spooky themed last‑meal suggestion
+- Evaluated Eric’s Taco Bell‑style last‑meal proposal
+- Compared different meal themes and personal nostalgia factors
+- Arak tier placement confirmed as F‑tier
+- KSI proposed a meal of Jollof rice, Chinese fried rice, KFC drumsticks, strawberry white chocolate cookie, and prime cherry limeade
+- Stokes Twins suggested crispy fried chicken drumsticks, buttery scrambled eggs, boba, and Chinese egg tart
+- Karim Minati offered chole batore with lassi and gajar kahlua dessert
+- Kari Manani requested Uruguayan beef Milanese with mixed mashed potatoes, alfajor dessert, and fresh orange juice
+- Discussion of Uruguayan Milanese with mixed mashed potatoes and alfajor
+- Evaluation of Preston's Southern‑style last meal including chicken fried steak and mocha
+- Comments on the poor taste of fried okra in Preston's meal
+- Review of Belgian cheese croquettes, ham gratin, and waffles
+- Presentation of a breakfast‑focused last meal with French toast and bacon
+- Food critic’s ribeye and lobster tail suggestion
+- Participants described their ideal last meals, including steak with lobster, boulonnaise pasta, egg fried rice with sweet and sour chicken, and chicken and waffles with truffle fries.
+- Debate over steak cooking temperature: medium vs. medium rare.
+- Discussion on cereal consumption order (milk first vs. cereal first).
+- Tier rankings were assigned: Faze Rug received an F-tier, Ben Asilar a B-tier, and beta squad a D-tier.
+- Various drinks and desserts were sampled and commented on, including cherry Dr. Pepper, lemonade, strawberry mint soda, and panna cotta.
+- Discussion of Zach King's proposed last meal with filet mignon, spring roll, and Thai iced tea.
+- Tier rating suggestion for ZHT's meal as a fair B tier.
+- Evaluation of Zach King's meal possibly being a C tier.
+- Proposal of an axis deer tenderloin with cheesy gordita crunch and skillet queso as a last meal.
+- Observation that the overall meal lacks a drink and dessert.

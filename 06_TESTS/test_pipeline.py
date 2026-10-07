@@ -398,24 +398,24 @@ def test_documentation_generate_record_token_aware_chunking(monkeypatch, capsys)
 def test_whisper_config_env_vars_and_cuda_detection(monkeypatch):
     from app.core import config
 
-    # When CUDA is detected and no env vars set -> cuda + float16
+    # When CUDA is detected and no env vars set -> large-v3 + cuda + float16
     monkeypatch.setattr(config, "is_cuda_available", lambda: True)
     monkeypatch.delenv("WHISPER_MODEL", raising=False)
     monkeypatch.delenv("WHISPER_DEVICE", raising=False)
     monkeypatch.delenv("WHISPER_COMPUTE_TYPE", raising=False)
     model, device, compute_type = config.get_whisper_config()
-    assert model == "small"
+    assert model == "large-v3"
     assert device == "cuda"
     assert compute_type == "float16"
 
-    # When CUDA is not detected and no env vars set -> cpu + int8
+    # When CUDA is not detected and no env vars set -> small + cpu + int8
     monkeypatch.setattr(config, "is_cuda_available", lambda: False)
     model, device, compute_type = config.get_whisper_config()
     assert model == "small"
     assert device == "cpu"
     assert compute_type == "int8"
 
-    # Explicit environment variable overrides
+    # Explicit environment variable overrides are respected
     monkeypatch.setenv("WHISPER_MODEL", "medium")
     monkeypatch.setenv("WHISPER_DEVICE", "cuda")
     monkeypatch.setenv("WHISPER_COMPUTE_TYPE", "float32")
@@ -424,10 +424,12 @@ def test_whisper_config_env_vars_and_cuda_detection(monkeypatch):
     assert device == "cuda"
     assert compute_type == "float32"
 
-    # Explicit CPU device defaults to int8 compute
+    # Explicit CPU device defaults to int8 compute and small fallback
     monkeypatch.setenv("WHISPER_DEVICE", "cpu")
+    monkeypatch.delenv("WHISPER_MODEL", raising=False)
     monkeypatch.delenv("WHISPER_COMPUTE_TYPE", raising=False)
     model, device, compute_type = config.get_whisper_config()
+    assert model == "small"
     assert device == "cpu"
     assert compute_type == "int8"
 
@@ -450,6 +452,7 @@ def test_transcribe_audio_enables_vad_filter_and_passes_initial_prompt(tmp_path,
     # 1. Comma-separated string glossary with duplicates and extra spaces
     result = transcription.transcribe_audio(audio, glossary="Docker, Kubernetes,  Docker , Helm")
     assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("condition_on_previous_text") is False
     assert recorded_kwargs.get("initial_prompt") == "Docker, Kubernetes, Helm"
     assert recorded_kwargs.get("language") == "en"
     assert result["text"] == "Testing speech."
@@ -460,19 +463,52 @@ def test_transcribe_audio_enables_vad_filter_and_passes_initial_prompt(tmp_path,
     recorded_kwargs.clear()
     transcription.transcribe_audio(audio, glossary=["Kafka", "Redis"])
     assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("condition_on_previous_text") is False
     assert recorded_kwargs.get("initial_prompt") == "Kafka, Redis"
 
     # 3. Direct initial_prompt argument takes precedence
     recorded_kwargs.clear()
     transcription.transcribe_audio(audio, glossary="Ignored", initial_prompt="Direct prompt")
     assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("condition_on_previous_text") is False
     assert recorded_kwargs.get("initial_prompt") == "Direct prompt"
 
     # 4. Empty/None glossary does not set initial_prompt
     recorded_kwargs.clear()
     transcription.transcribe_audio(audio, glossary="")
     assert recorded_kwargs.get("vad_filter") is True
+    assert recorded_kwargs.get("condition_on_previous_text") is False
     assert "initial_prompt" not in recorded_kwargs
+
+
+def test_transcribe_audio_explicitly_disables_condition_on_previous_text(tmp_path, monkeypatch):
+    audio = create_valid_test_wav(tmp_path / "meeting_rep.wav", duration=1.0)
+    received_kwargs = {}
+
+    class InspectingWhisperModel:
+        def transcribe(self, file_path, **kwargs):
+            received_kwargs.update(kwargs)
+            return iter(
+                [
+                    SimpleNamespace(start=0.0, end=2.0, text="First segment without looping."),
+                    SimpleNamespace(start=2.0, end=4.0, text="Second segment cleanly isolated."),
+                ]
+            ), SimpleNamespace(language="en")
+
+    monkeypatch.setattr(
+        transcription, "get_whisper_model", lambda: InspectingWhisperModel()
+    )
+
+    result = transcription.transcribe_audio(audio, glossary=["DevOps"])
+    assert "condition_on_previous_text" in received_kwargs
+    assert received_kwargs["condition_on_previous_text"] is False
+    assert received_kwargs["vad_filter"] is True
+    assert received_kwargs["language"] == "en"
+    assert received_kwargs["initial_prompt"] == "DevOps"
+    assert len(result["segments"]) == 2
+    assert result["chunked"] is False
+    assert result["backend"] == "faster-whisper"
+    assert "First segment without looping." in result["text"]
 
 
 def test_transcribe_audio_uses_configured_model_and_device(tmp_path, monkeypatch):

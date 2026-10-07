@@ -250,6 +250,7 @@ def transcribe_audio(
     transcribe_kwargs: dict[str, Any] = {
         "language": "en",
         "vad_filter": True,
+        "condition_on_previous_text": False,
     }
     if prompt:
         transcribe_kwargs["initial_prompt"] = prompt
@@ -267,7 +268,12 @@ def transcribe_audio(
             filtered_kwargs = transcribe_kwargs
         segments_iterator, info = model.transcribe(str(path), **filtered_kwargs)
     except TypeError:
-        segments_iterator, info = model.transcribe(str(path), language="en")
+        try:
+            segments_iterator, info = model.transcribe(
+                str(path), language="en", condition_on_previous_text=False
+            )
+        except TypeError:
+            segments_iterator, info = model.transcribe(str(path), language="en")
 
     segments = [
         {

@@ -28,18 +28,32 @@ def is_cuda_available() -> bool:
 
 
 def get_whisper_config() -> tuple[str, str, str]:
-    """Resolves Whisper model, device, and compute type from env vars or hardware defaults."""
-    model = (os.getenv("WHISPER_MODEL") or "small").strip()
+    """Resolves Whisper model, device, and compute type from env vars or hardware defaults.
 
-    device = os.getenv("WHISPER_DEVICE")
-    if device:
-        device = device.strip()
+    Hardware-aware defaults:
+    - If CUDA is available: model='large-v3', device='cuda', compute_type='float16'
+    - If CUDA is unavailable: model='small', device='cpu', compute_type='int8'
+
+    Explicit environment variables (WHISPER_MODEL, WHISPER_DEVICE, WHISPER_COMPUTE_TYPE)
+    take precedence over hardware defaults.
+    """
+    cuda_detected = is_cuda_available()
+
+    device_env = os.getenv("WHISPER_DEVICE")
+    if device_env and device_env.strip():
+        device = device_env.strip()
     else:
-        device = "cuda" if is_cuda_available() else "cpu"
+        device = "cuda" if cuda_detected else "cpu"
 
-    compute_type = os.getenv("WHISPER_COMPUTE_TYPE")
-    if compute_type:
-        compute_type = compute_type.strip()
+    model_env = os.getenv("WHISPER_MODEL")
+    if model_env and model_env.strip():
+        model = model_env.strip()
+    else:
+        model = "large-v3" if (cuda_detected and device == "cuda") else "small"
+
+    compute_type_env = os.getenv("WHISPER_COMPUTE_TYPE")
+    if compute_type_env and compute_type_env.strip():
+        compute_type = compute_type_env.strip()
     else:
         compute_type = "float16" if device == "cuda" else "int8"
 

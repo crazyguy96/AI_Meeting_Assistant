@@ -1,0 +1,58 @@
+[
+  {
+    "text": "Send a staff list advising about priority parking and rules",
+    "status": "Confirmed",
+    "evidence_quote": "OK, great. So can we all agree that we send a list to all staff advising them about the priority parking? Is that OK?",
+    "evidence": {
+      "found": true,
+      "timestamp": 297.16,
+      "segment_ids": [
+        "S0127",
+        "S0128",
+        "S0129"
+      ],
+      "score": 0.954
+    }
+  },
+  {
+    "text": "Set three visitor parking spaces",
+    "status": "Needs Review",
+    "evidence_quote": "How about two car parking spaces for visitors as well?... Actually, yes. Let's make it three.",
+    "evidence": {
+      "found": false,
+      "timestamp": "Unknown",
+      "segment_ids": [],
+      "score": 0.731
+    }
+  },
+  {
+    "text": "Implement loss of parking privilege for inconsiderate parking",
+    "status": "Confirmed",
+    "evidence_quote": "Also think that if anybody parks inconsiderately that they should lose their car parking privilege.",
+    "evidence": {
+      "found": true,
+      "timestamp": 303.16,
+      "segment_ids": [
+        "S0131",
+        "S0132",
+        "S0133"
+      ],
+      "score": 1.0
+    }
+  },
+  {
+    "text": "Pay electricity bills on time to prevent future power outages.",
+    "status": "Confirmed",
+    "evidence_quote": "Agreed? Agreed.",
+    "evidence": {
+      "found": true,
+      "timestamp": 710.32,
+      "segment_ids": [
+        "S0329",
+        "S0330",
+        "S0331"
+      ],
+      "score": 1.0
+    }
+  }
+]
