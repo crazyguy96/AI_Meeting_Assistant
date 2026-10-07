@@ -59,7 +59,7 @@ The Gradio interface will start locally.
 pytest 06_TESTS
 ```
 
-**Current verification: 98 tests passing.**
+**Current verification: 99 tests passing.**
 
 ---
 
@@ -98,7 +98,7 @@ GPT-OSS-120B
      ↓
 REFINED TRANSCRIPT
      ↓
-GPT-OSS-20B
+GPT-OSS-120B
      ↓
 Evidence Validation
      ↓
@@ -139,14 +139,15 @@ It is **not** responsible for producing the final meeting summary.
 
 ### Stage 3 — Structured Documentation
 
-**GPT-OSS-20B via Groq** receives the refined transcript and extracts:
+**GPT-OSS-120B via Groq** receives the refined transcript and extracts:
 
-- summary
-- confirmed decisions
-- action items
-- owners when explicitly stated
-- deadlines when explicitly stated
-- supporting evidence
+- summary (concise, factual, preventing ungrounded completion claims)
+- confirmed decisions (supported by explicit transcript agreement)
+- discussed not decided (proposals, estimates, predictions, options)
+- action items (assigned tasks and unassigned outstanding work)
+- owners (explicitly stated name, or `Unspecified`)
+- deadlines (explicitly stated date/timeframe, or `Unspecified`)
+- supporting evidence quotes
 
 ### Evidence Validation
 
@@ -157,25 +158,16 @@ The system explicitly distinguishes:
 ```text
 Proposal        ≠ Decision
 Suggestion      ≠ Assignment
+Estimate        ≠ Decision
+Clarification   ≠ Decision
 Mentioned date  ≠ Deadline
 Possibility     ≠ Commitment
 ```
 
-For example:
-
-```text
-"We could move this to next week."
-        ↓
-Proposal — not automatically a decision
-```
-
-and:
-
-```text
-"Maybe Jatin can handle it."
-        ↓
-Suggestion — not automatically an assignment
-```
+Key extraction safety rules:
+- **Outstanding work**: "need to", "still need to", "should", "investigate", and future next-meeting follow-ups are extracted as action items with `Needs Review` status.
+- **Strict metadata grounding**: If an owner or deadline is not explicitly named in the transcript, it remains `Unspecified`. First-person commitments without verified speaker identification never guess a speaker name.
+- **Anti-overclaiming**: The system never claims an item was "finalized", "completed", or "approved" unless the transcript explicitly confirms completion. Estimates, predictions, and proposals route to *Discussed, Not Decided*.
 
 ---
 
@@ -225,31 +217,29 @@ Warning / Fallback
 Continue Refinement
 ```
 
-Required stages such as refinement and documentation fail explicitly rather than silently generating an incomplete record.
+### Graceful API Failure Fallback
+
+- **Glossary failure**: Non-fatal; logs warning and proceeds with default terminology.
+- **Refinement API failure**: If Groq fails after retries/backoff, the pipeline preserves the raw transcript as the safe refined fallback, records a sanitized warning (`[REDACTED_API_KEY]`), and surfaces a warning banner in the UI without crashing the overall session.
+- **Documentation failure**: Fails explicitly rather than silently fabricating meeting records.
 
 ---
 
 ## 🧩 Long-Meeting Processing
 
-Long transcripts can exceed the practical context budget of a single request.
+Long transcripts can exceed the practical context budget of a single LLM request. The pipeline handles this through:
 
-The refinement stage therefore uses token-aware chunking:
-
-```text
-Long Transcript
-      ↓
-Token-aware Chunking
-      ↓
-Chunk 1   Chunk 2   ...   Chunk N
-      ↓
-Sequential Refinement
-      ↓
-Ordered Reconstruction
-      ↓
-Refined Transcript
-```
-
-This avoids relying on a hardcoded meeting duration.
+1. **Structure-Aware Chunking**:
+   - Prefers natural paragraph boundaries (`\n\n`).
+   - Falls back to sentence boundaries (`. ! ?`).
+   - Uses word boundaries as final fallback to never split sentences unnecessarily.
+2. **Configurable Token Budgets**:
+   - `DOCUMENTATION_MAX_INPUT_TOKENS` (default: 6,000) governs chunk sizing.
+   - `DOCUMENTATION_MAX_OUTPUT_TOKENS` governs output generation headroom.
+3. **Cross-Chunk Context**:
+   - `DOCUMENTATION_CHUNK_OVERLAP_WORDS` (default: 200 words) injects preceding dialogue context so boundary-spanning decisions and evidence are not lost.
+4. **Deterministic Near-Duplicate Merging**:
+   - Merges identical or near-identical decisions and actions spanning adjacent chunks using deterministic token similarity and protected-token safeguards without heavy ML dependencies.
 
 ---
 
@@ -335,7 +325,7 @@ pytest 06_TESTS
 Current verification:
 
 ```text
-43 passed
+99 passed
 ```
 
 Coverage includes:
@@ -438,16 +428,16 @@ Local STT keeps transcription independent from the hosted LLM stages and provide
 
 Groq provides fast inference for the language-model stages, which is useful for an interactive multi-stage pipeline.
 
-### Why two language models?
+### Why separated LLM stages?
 
-The models have deliberately separated responsibilities:
+The language-model stages have deliberately separated prompts and responsibilities:
 
 ```text
-GPT-OSS-120B
+GPT-OSS-120B (Refinement Prompt)
       ↓
 Transcript Refinement
       ↓
-GPT-OSS-20B
+GPT-OSS-120B (Documentation Prompt)
       ↓
 Documentation & Extraction
 ```
