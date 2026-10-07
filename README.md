@@ -355,15 +355,16 @@ received → validated → transcribing → raw_ready
 
 ## 🎬 Demo
 
-All demo material is under:
+All demo material and walkthrough media are located under:
 
 ```text
 04_DEMO/
-├── recording/
-└── outputs/
+├── Demo_Video.mp4    # End-to-end recorded walkthrough
+├── recording/        # Benchmark meeting audio recordings
+└── outputs/          # Complete generated outputs for all meetings
 ```
 
-The repository contains recordings and complete generated artifacts for the demo meetings.
+The repository contains recordings, walkthrough video, and complete generated artifacts for the demo meetings.
 
 Each output bundle can contain:
 

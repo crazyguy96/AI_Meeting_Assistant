@@ -10,4 +10,5 @@ __pycache__/
 *.tmp
 *.temp
 *.log
+*.mov
 .DS_Store
