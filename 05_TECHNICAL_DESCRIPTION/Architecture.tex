@@ -61,11 +61,11 @@
 {\fontsize{25}{28}\selectfont\bfseries AI Meeting Assistant\par}
 \vspace{1pt}
 \tagline{From Meeting Audio to Structured, Actionable Records}
-\vspace{5pt}
+\vspace{3pt}
 \begin{tabularx}{\textwidth}{@{}X r@{}}
 \smallcaps{Inter IIT Bootcamp} & \smallcaps{Multimodel AI Pipeline}
 \end{tabularx}
-\vspace{5pt}
+\vspace{3pt}
 
 \begin{minipage}[t]{0.34\textwidth}
 \section*{Problem}
@@ -75,11 +75,11 @@ Recorded meetings contain decisions, technical terminology, commitments, deadlin
 \begin{card}
 \centering
 \textbf{AUDIO}\\[-1pt] $\downarrow$\\[-2pt]
-\textbf{faster-whisper}\\[-1pt] $\downarrow$\\[-2pt]
+\textbf{faster-whisper small + Silero VAD}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{RAW TRANSCRIPT}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{GPT-OSS-120B}\\[-1pt]{\scriptsize Domain Refinement}\\[-2pt]$\downarrow$\\[-2pt]
 \textbf{REFINED TRANSCRIPT}\\[-1pt] $\downarrow$\\[-2pt]
-\textbf{GPT-OSS-20B}\\[-1pt]{\scriptsize Documentation}\\[-2pt]$\downarrow$\\[-2pt]
+\textbf{GPT-OSS-120B}\\[-1pt]{\scriptsize Documentation}\\[-2pt]$\downarrow$\\[-2pt]
 \textbf{MEETING RECORD}
 \end{card}
 \end{minipage}\hfill
@@ -100,24 +100,24 @@ Each model has one clearly defined responsibility, keeping transcription, refine
 \end{darkcard}
 \end{minipage}
 
-\vspace{5pt}
+\vspace{3pt}
 \section*{Architecture at a Glance}
 \begin{center}
 \begin{tikzpicture}[node distance=5mm and 4mm, every node/.style={font=\scriptsize}, box/.style={draw=rulegray,fill=softgray,rounded corners=1.2mm,minimum width=2.45cm,minimum height=0.65cm,align=center}, dark/.style={draw=ink,fill=ink,text=white,rounded corners=1.2mm,minimum width=2.45cm,minimum height=0.65cm,align=center}]
 \node[dark] (a) {MEETING AUDIO};
 \node[box,right=of a] (b) {Input\\Validation};
-\node[dark,right=of b] (c) {FASTER-WHISPER\\\scriptsize Audio → Text};
+\node[dark,right=of b] (c) {FASTER-WHISPER SMALL + VAD\\\scriptsize Audio → Text};
 \node[box,right=of c] (d) {Raw\\Transcript};
 \node[dark,right=of d] (e) {GPT-OSS-120B\\\tiny Refinement};
 \node[box,below=of e] (f) {Refined\\Transcript};
-\node[dark,left=of f] (g) {GPT-OSS-20B\\\tiny Documentation};
+\node[dark,left=of f] (g) {GPT-OSS-120B\\\tiny Documentation};
 \node[box,left=of g] (h) {Evidence\\Validation};
 \node[box,left=of h] (i) {Meeting\\Record};
 \foreach \x/\y in {a/b,b/c,c/d,d/e,e/f,f/g,g/h,h/i}{\draw[-{Latex[length=1.4mm]},line width=.5pt] (\x)--(\y);}
 \end{tikzpicture}
 \end{center}
 
-\vspace{5pt}
+\vspace{3pt}
 \twocard{Why preserve raw?}{If the final record is wrong, intermediate representations make it possible to determine whether the issue originated in audio, STT, refinement, documentation or evidence validation.}{System contract}{\small \textbf{Raw} = what was heard\quad \textbf{Refined} = what was improved\quad \textbf{Final} = what is supported.}
 
 \vspace{4pt}
@@ -160,7 +160,7 @@ Raw transcript answers \textit{what the speech recognizer heard}; refinement ans
 
 \begin{minipage}[t]{0.47\textwidth}
 \vspace{0pt}
-\begin{darkcard}\textbf{faster-whisper}\hfill \textsc{Audio → Text}\end{darkcard}
+\begin{darkcard}\centering\textbf{faster-whisper small + Silero VAD}\par\vspace{1pt}\scriptsize Audio → Text\end{darkcard}
 \begin{card}
 \textbf{Input:} recorded English meeting audio\\
 \textbf{Output:} timestamped transcript segments\\[2pt]
@@ -180,12 +180,13 @@ The STT stage is deliberately isolated from the Groq language-model stages. It c
 \end{card}
 \end{minipage}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{STT Data Flow}
+\vspace{2pt}
 \begin{center}
-\begin{tikzpicture}[every node/.style={font=\scriptsize}, n/.style={draw=rulegray,fill=softgray,rounded corners=1.2mm,minimum width=2.55cm,minimum height=.82cm,align=center,inner sep=2pt}, dn/.style={draw=ink,fill=ink,text=white,rounded corners=1.2mm,minimum width=2.65cm,minimum height=.82cm,align=center,inner sep=2pt}]
+\begin{tikzpicture}[every node/.style={font=\scriptsize}, n/.style={draw=rulegray,fill=softgray,rounded corners=1.2mm,minimum width=2.75cm,minimum height=.82cm,align=center,inner sep=2pt}, dn/.style={draw=ink,fill=ink,text=white,rounded corners=1.2mm,minimum width=2.95cm,minimum height=.82cm,align=center,inner sep=2pt}]
 \node[n]  (a) at (0,0)       {MEETING\\AUDIO};
-\node[dn] (b) at (3.25,0)  {FASTER-WHISPER\\\tiny Audio → Text};
+\node[dn] (b) at (3.25,0)  {FASTER-WHISPER SMALL\\+ SILERO VAD\\\tiny Audio → Text};
 \node[n]  (c) at (6.55,0)  {TIMESTAMPED\\SEGMENTS};
 \node[n]  (d) at (9.85,0)  {RAW\\TRANSCRIPT};
 \draw[-{Latex[length=1.8mm,width=1.2mm]},line width=.7pt] (a.east)--(b.west);
@@ -199,6 +200,7 @@ The STT stage is deliberately isolated from the Groq language-model stages. It c
 
 \vspace{4pt}
 \section*{Validation Before Inference}
+\vspace{2pt}
 \begin{tabularx}{\textwidth}{@{}XXX@{}}
 \begin{card}\textbf{File validation}\par Empty, corrupt, unreadable or unsupported inputs are rejected explicitly.
 \end{card}&
@@ -210,6 +212,7 @@ The STT stage is deliberately isolated from the Groq language-model stages. It c
 
 \vspace{4pt}
 \section*{Why the Raw Transcript Is a First-Class Output}
+\vspace{2pt}
 \begin{card}
 The raw transcript is not merely an intermediate variable. It is an explicit product of the system. This creates an auditable boundary between \textbf{what the speech recognizer produced} and \textbf{what later language models changed}. If the refined transcript or final record contains an error, the evaluator can compare representations instead of trusting a single generated result.
 \end{card}
@@ -249,7 +252,7 @@ The raw transcript is not merely an intermediate variable. It is an explicit pro
 \textbf{What STT deliberately does not do}\par It does not summarize, infer decisions, identify owners, correct domain terminology through an LLM, or generate meeting minutes. Those operations begin only after a raw transcript exists.
 \end{card}
 
-\vspace{4pt}
+\vspace{8pt}
 \begin{darkcard}
 \textbf{Stage contract}\quad \textsc{Audio → timestamped segments → raw transcript. No summarization. No semantic rewriting.}
 \end{darkcard}
@@ -268,7 +271,7 @@ The raw transcript is not merely an intermediate variable. It is an explicit pro
 The refinement model receives the raw transcript and performs controlled language cleanup. Its responsibility is to improve transcript quality, terminology and readability while preserving the underlying meaning.
 \end{darkcard}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{What the Refinement Stage Handles}
 \begin{tabularx}{\textwidth}{@{}XXXX@{}}
 \begin{card}\textbf{Technical terms}\par Domain-specific vocabulary and plausible STT corrections.
@@ -281,7 +284,7 @@ The refinement model receives the raw transcript and performs controlled languag
 \end{card}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Protected Semantics}
 \begin{center}
 \begin{tikzpicture}[node distance=5mm and 5mm, every node/.style={font=\scriptsize}, n/.style={draw=rulegray,fill=softgray,rounded corners=1mm,minimum width=2.65cm,minimum height=.68cm,align=center}, dn/.style={draw=ink,fill=ink,text=white,rounded corners=1mm,minimum width=2.65cm,minimum height=.68cm,align=center}]
@@ -299,7 +302,7 @@ The refinement model receives the raw transcript and performs controlled languag
 \end{card}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Optional Glossary Enrichment}
 \begin{minipage}[t]{0.48\textwidth}
 \begin{card}
@@ -314,7 +317,7 @@ Glossary extraction is optional. If it fails, the system warns and continues ref
 \end{card}
 \end{minipage}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Long-Meeting Strategy}
 \begin{card}
 \centering
@@ -333,26 +336,26 @@ Glossary extraction is optional. If it fails, the system warns and continues ref
 \end{card}
 \end{minipage}
 
-\vspace{3pt}
+\vspace{4pt}
 \begin{card}
 \textbf{What this stage does NOT do}\par
 It does not summarize the meeting, decide what counts as an assignment, invent missing owners, or convert proposals into decisions. Those responsibilities belong to the documentation and evidence stages.
 \end{card}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Reliability Controls}
 \begin{tabularx}{\textwidth}{@{}XX@{}}
 \begin{card}\textbf{Structured output}\par Explicit schemas, prompt alignment, validation and retry/backoff protect downstream stages from malformed responses.\end{card}&
 \begin{card}\textbf{Audit + fallback}\par Glossary failure is non-fatal; the refined transcript remains a separate artifact for raw-versus-refined inspection.\end{card}
 \end{tabularx}
 
-\vspace{3pt}
+\vspace{4pt}
 \begin{darkcard}
 \textbf{Stage contract}\quad \textsc{Raw transcript → controlled refinement → refined transcript.}\par
 \small Preserve names, numbers, negation, commitments, ordering and meaning; do not summarize or invent.
 \end{darkcard}
 
-\vspace{3pt}
+\vspace{4pt}
 \begin{notecard}\textbf{KEY TAKEAWAY}\quad Refinement improves the transcript; it is not permission to rewrite the meeting.\end{notecard}
 \newpage
 
@@ -369,7 +372,7 @@ It does not summarize the meeting, decide what counts as an assignment, invent m
 The documentation model receives the refined transcript and asks: \textit{What useful meeting information can safely be extracted from this conversation?}
 \end{darkcard}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Structured Meeting Record}
 \begin{tabularx}{\textwidth}{@{}XXXX@{}}
 \begin{card}\textbf{Summary}\par Concise representation of what happened during the meeting.
@@ -382,7 +385,7 @@ The documentation model receives the refined transcript and asks: \textit{What u
 \end{card}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Evidence-First Extraction}
 \begin{center}
 \begin{tikzpicture}[node distance=8mm and 7mm, every node/.style={font=\scriptsize}, n/.style={draw=rulegray,fill=softgray,rounded corners=1.2mm,minimum width=3.4cm,minimum height=.8cm,align=center}, dn/.style={draw=ink,fill=ink,text=white,rounded corners=1.2mm,minimum width=3.4cm,minimum height=.8cm,align=center}]
@@ -403,14 +406,14 @@ The documentation model receives the refined transcript and asks: \textit{What u
 \begin{darkcard}\centering\textbf{Possibility}\\$\neq$ Commitment\end{darkcard}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Examples of Safe Extraction}
 \twocard{Discussion}{“We could move this to next week.” is a proposal, not a confirmed decision.}{Assignment}{“Maybe Jatin can handle it.” is a suggestion unless the meeting establishes an actual assignment.}
 
 \vspace{4pt}
 \twocard{Missing metadata}{If no owner is stated, owner remains unspecified. If no deadline is stated, deadline remains unspecified.}{Evidence boundary}{A fluent LLM statement is not sufficient evidence. Extracted claims are checked against transcript evidence before entering the final record.}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Human + Machine Outputs}
 \begin{tabularx}{\textwidth}{@{}XX@{}}
 \begin{card}
@@ -428,11 +431,11 @@ Summary, decisions, action items and supporting context in an evaluator-friendly
 \end{card}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \begin{card}
 \textbf{Why two language models?}\par
 GPT-OSS-120B answers: \textit{How can the transcript be represented more accurately without changing its meaning?}\par
-GPT-OSS-20B answers: \textit{What decisions and actionable information can safely be extracted?}\par
+GPT-OSS-120B answers: \textit{What decisions and actionable information can safely be extracted?}\par
 The separation makes the source conversation and the extracted meeting record independently inspectable.
 \end{card}
 
@@ -451,7 +454,7 @@ The separation makes the source conversation and the extracted meeting record in
 \textbf{Output guarantees}\quad The final record distinguishes confirmed information from missing metadata. Unsupported owners, deadlines, decisions or assignments are not filled in merely to make the output look complete.
 \end{card}
 
-\vspace{4pt}
+\vspace{8pt}
 \begin{darkcard}
 \textbf{Reliability principle}\quad The system prioritizes evidence over fluency. It should fail explicitly rather than silently invent information.
 \end{darkcard}
@@ -476,7 +479,7 @@ Structured-output validation can fail when generated JSON is malformed. The pipe
 \end{card}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \begin{tabularx}{\textwidth}{@{}XX@{}}
 \begin{darkcard}\textbf{03 — Meaning Preservation}\end{darkcard}&
 \begin{darkcard}\textbf{04 — Stage Observability}\end{darkcard}
@@ -489,7 +492,7 @@ The pipeline exposes explicit states: received, validated, transcribing, raw\_re
 \end{card}
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Retry + Fallback Architecture}
 \begin{center}
 \begin{tikzpicture}[node distance=7mm and 5mm, every node/.style={font=\scriptsize}, n/.style={draw=rulegray,fill=softgray,rounded corners=1.1mm,minimum width=2.7cm,minimum height=.7cm,align=center}, dn/.style={draw=ink,fill=ink,text=white,rounded corners=1.1mm,minimum width=2.7cm,minimum height=.7cm,align=center}]
@@ -498,7 +501,7 @@ The pipeline exposes explicit states: received, validated, transcribing, raw\_re
 \end{tikzpicture}
 \end{center}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Failure Handling by Criticality}
 \begin{center}
 \begin{tabularx}{0.94\textwidth}{@{}l X X@{}}
@@ -513,10 +516,10 @@ Evidence validation & Reject unsupported claim & Plausible language is not evide
 \end{tabularx}
 \end{center}
 
-\vspace{5pt}
+\vspace{4pt}
 \twocard{Reasoning-token control}{GPT-OSS models are reasoning models. Long structured requests can consume generation budget before valid JSON appears, so reasoning behavior and output budgets are controlled.}{API-key protection}{\small Exceptions are sanitized before logging so live credentials do not accidentally appear in terminal output or application error messages.}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Long-Recording Verification}
 \begin{card}
 A real approximately 15-minute meeting exposed the practical token-budget problem. After token-aware chunking and the hardened request path, the full pipeline completed successfully.
@@ -527,14 +530,14 @@ A real approximately 15-minute meeting exposed the practical token-budget proble
 \end{tabularx}
 \end{card}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Stage-Level Observability}
 \begin{card}
 \centering\ttfamily\small
 received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_ready $\rightarrow$ refining $\rightarrow$ refined $\rightarrow$ documenting $\rightarrow$ validating $\rightarrow$ exporting $\rightarrow$ complete
 \end{card}
 
-\vspace{5pt}
+\vspace{4pt}
 \begin{tabularx}{\textwidth}{@{}XXX@{}}
 \begin{notecard}\textbf{Debuggable}\par A failure can be localized to a stage instead of reported as a generic processing error.
 \end{notecard}&
@@ -546,7 +549,7 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 
 \begin{card}\textbf{Engineering lessons}\quad Observable stages, graceful optional fallbacks, explicit token budgets, structured-output recovery and evidence validation turn real failure modes into testable engineering contracts.\end{card}
 
-\vspace{4pt}
+\vspace{8pt}
 \begin{darkcard}
 \textbf{Engineering takeaway}\quad Token limits, malformed structured output, API failures and semantic drift are treated as engineering constraints—not hidden behind a final generated paragraph.
 \end{darkcard}
@@ -556,7 +559,7 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 % PAGE 6 — UI + TESTING + STACK + FINAL STATUS
 {\fontsize{22}{25}\selectfont\bfseries UI + Testing + Final Status\par}
 \tagline{A compact evaluator surface backed by automated tests and real end-to-end verification.}
-\vspace{3pt}
+\vspace{4pt}
 
 \begin{minipage}[t]{0.53\textwidth}
 \section*{Human-Centered Interface}
@@ -564,7 +567,7 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 \centering\textbf{Raw Transcript}\hspace{8pt}|\hspace{8pt}\textbf{Refined}\hspace{8pt}|\hspace{8pt}\textbf{Final Output}
 \end{card}
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-\item \textbf{Raw Transcript} — original timestamped faster-whisper output.
+\item \textbf{Raw Transcript} — original timestamped faster-whisper small + VAD output.
 \item \textbf{Refined Transcript} — domain-corrected transcript with preserved meaning.
 \item \textbf{Final Output} — summary, minutes, decisions, action items and evidence.
 \end{itemize}
@@ -578,7 +581,7 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 \end{card}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.44\textwidth}
-\begin{darkcard}\centering\fontsize{20}{22}\selectfont\bfseries 43 / 43\par\vspace{1pt}\normalsize automated tests passing\end{darkcard}
+\begin{darkcard}\centering\fontsize{20}{22}\selectfont\bfseries 99 / 99\par\vspace{1pt}\normalsize automated tests passing\end{darkcard}
 \begin{card}\small
 \textbf{Coverage}\par\vspace{1pt}
 Evidence · Pipeline · Refinement · Safety · UI
@@ -596,7 +599,7 @@ A real approximately 15-minute recording completed audio → transcription → r
 \end{darkcard}
 \end{minipage}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{Test Suite}
 \scriptsize
 \begin{tabularx}{\textwidth}{@{}l X@{}}
@@ -611,7 +614,7 @@ UI & Status streaming, errors and three-stage output layout.\\
 \bottomrule
 \end{tabularx}
 
-\vspace{5pt}
+\vspace{4pt}
 \begin{minipage}[t]{0.46\textwidth}
 \section*{Downloadable Output Contract}
 \begin{card}\ttfamily\scriptsize
@@ -633,9 +636,9 @@ refinement\_audit.json
 \textbf{Layer} & \textbf{Technology} & \textbf{Role}\\
 \midrule
 Language & Python & Pipeline implementation\\
-Speech-to-text & faster-whisper & Audio → raw transcript\\
+Speech-to-text & faster-whisper small + Silero VAD & Audio → raw transcript\\
 Refinement & GPT-OSS-120B & Domain-aware correction\\
-Documentation & GPT-OSS-20B & Structured extraction\\
+Documentation & GPT-OSS-120B & Structured extraction\\
 Inference & Groq & Hosted LLM inference\\
 UI & Gradio & Upload, status, inspection, export\\
 Output & JSON / Schema & Validated machine-readable record\\
@@ -644,7 +647,7 @@ Testing & Pytest & Regression suite\\
 \end{tabularx}
 \end{minipage}
 
-\vspace{5pt}
+\vspace{4pt}
 \section*{PS / Requirement Coverage}
 \scriptsize
 \begin{center}
@@ -652,10 +655,10 @@ Testing & Pytest & Regression suite\\
 \toprule
 \textbf{Requirement} & \textbf{Implementation} & \textbf{Status}\\
 \midrule
-English meeting audio & faster-whisper & \textbf{YES}\\
+English meeting audio & faster-whisper small + Silero VAD & \textbf{YES}\\
 Raw transcript & Dedicated preserved artifact & \textbf{YES}\\
 Domain refinement & GPT-OSS-120B & \textbf{YES}\\
-Separate language model & GPT-OSS-20B & \textbf{YES}\\
+Separate documentation stage & GPT-OSS-120B & \textbf{YES}\\
 Minutes / summary & Structured meeting record & \textbf{YES}\\
 Decisions & Evidence-aware extraction & \textbf{YES}\\
 Tasks & Grounded action items & \textbf{YES}\\
@@ -674,11 +677,11 @@ New recordings & Dynamic processing pipeline & \textbf{YES}\\
 \end{card}&
 \begin{card}\textbf{Evidence boundary}\par\small Unsupported owners, deadlines or decisions are not invented. Proposal, suggestion and mention remain distinct from commitment.
 \end{card}&
-\begin{card}\textbf{Future-ready boundary}\par\small Extension points remain for diarization, multilingual support, meeting history, semantic search, integrations and real-time assistance.
+\begin{card}\textbf{Current boundary}\par\small The submitted system processes recorded English meeting audio through the validated multimodel pipeline. Unsupported integrations and future features are outside the current architecture.
 \end{card}
 \end{tabularx}
 
-\vspace{4pt}
+\vspace{8pt}
 \begin{darkcard}
 \centering\small
 \textbf{Final verification}\quad Upload → Transcribe → Refine → Document → Validate → Export.\\[-1pt]

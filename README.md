@@ -107,7 +107,7 @@ FINAL MEETING RECORD
 
 ### Stage 1 — Speech Recognition
 
-**faster-whisper** performs local English speech-to-text and produces timestamped segments.
+**faster-whisper (small)** performs local English speech-to-text with Silero VAD filtering and domain glossary prompting, producing timestamped segments.
 
 ```text
 Meeting Audio
@@ -412,7 +412,7 @@ See `07_SUBMISSION/DEMO.md` for the evaluator-facing demo workflow.
 | Layer | Technology |
 |---|---|
 | Language | Python |
-| Speech-to-Text | faster-whisper |
+| Speech-to-Text | faster-whisper small + Silero VAD |
 | Refinement | `openai/gpt-oss-120b` |
 | Documentation | `openai/gpt-oss-120b` |
 | LLM Inference | Groq |
