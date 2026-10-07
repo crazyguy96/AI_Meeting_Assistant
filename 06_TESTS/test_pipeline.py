@@ -565,6 +565,30 @@ def test_audio_validation_silent_audio_rejected(tmp_path):
         transcription.validate_audio_file(path)
 
 
+def test_audio_validation_allows_leading_silence_with_subsequent_speech(tmp_path):
+    path = tmp_path / "leading_silence.wav"
+    import math
+    import struct
+    sample_rate = 16000
+    silence_samples = int(10.0 * sample_rate)
+    speech_samples = int(1.0 * sample_rate)
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        # ~10 seconds of leading digital silence
+        wf.writeframes(b"\x00\x00" * silence_samples)
+        # Followed by audible audio/speech tone
+        frames = bytearray()
+        for i in range(speech_samples):
+            val = int(16000 * math.sin(2 * math.pi * 440.0 * i / sample_rate))
+            frames.extend(struct.pack("<h", val))
+        wf.writeframes(frames)
+
+    result = transcription.validate_audio_file(path)
+    assert result == path
+
+
 def test_audio_validation_duration_boundary_checks(tmp_path, monkeypatch):
     from app.core import config
 
@@ -787,6 +811,52 @@ def test_merge_records_near_duplicate_actions():
     assert len(merged["action_items"]) == 2
     owners = {a["owner"] for a in merged["action_items"]}
     assert owners == {"Bob", "Alice"}
+
+
+def test_merge_records_respects_conflicting_deadlines_and_protected_tokens():
+    from app.pipeline.documentation import merge_records
+
+    chunk1 = {
+        "action_items": [
+            {
+                "task": "Submit evaluation report",
+                "owner": "Priya",
+                "deadline": "Friday",
+                "status": "Confirmed",
+                "evidence_quote": "Priya will submit by Friday.",
+            },
+            {
+                "task": "Prepare twelve GPU clusters",
+                "owner": "Rahul",
+                "deadline": "Monday",
+                "status": "Confirmed",
+                "evidence_quote": "Rahul will prepare twelve clusters.",
+            },
+        ]
+    }
+    chunk2 = {
+        "action_items": [
+            # Same task and owner, but conflicting deadline (Monday vs Friday)
+            {
+                "task": "Submit evaluation report",
+                "owner": "Priya",
+                "deadline": "Monday",
+                "status": "Confirmed",
+                "evidence_quote": "Priya will submit by Monday.",
+            },
+            # Similar task, but number word differs (twenty vs twelve)
+            {
+                "task": "Prepare twenty GPU clusters",
+                "owner": "Rahul",
+                "deadline": "Monday",
+                "status": "Confirmed",
+                "evidence_quote": "Rahul will prepare twenty clusters.",
+            },
+        ]
+    }
+    merged = merge_records([chunk1, chunk2])
+    # Conflicting explicit deadlines and differing number words must prevent merging
+    assert len(merged["action_items"]) == 4
 
 
 def test_merge_records_splits_semicolon_minutes():

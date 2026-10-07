@@ -51,7 +51,7 @@ WHISPER_MODEL, WHISPER_DEVICE, WHISPER_COMPUTE_TYPE = get_whisper_config()
 
 # Groq LLM model identifiers for transcript refinement and documentation generation.
 GROQ_REFINEMENT_MODEL = os.getenv(
-    "GROQ_REFINEMENT_MODEL", "openai/gpt-oss-120b"
+    "GROQ_REFINEMENT_MODEL", "openai/gpt-oss-20b"
 )
 GROQ_DOCUMENTATION_MODEL = os.getenv(
     "GROQ_DOCUMENTATION_MODEL", "openai/gpt-oss-120b"

@@ -77,7 +77,7 @@ Recorded meetings contain decisions, technical terminology, commitments, deadlin
 \textbf{AUDIO}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{faster-whisper small + Silero VAD}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{RAW TRANSCRIPT}\\[-1pt] $\downarrow$\\[-2pt]
-\textbf{GPT-OSS-120B}\\[-1pt]{\scriptsize Domain Refinement}\\[-2pt]$\downarrow$\\[-2pt]
+\textbf{GPT-OSS-20B}\\[-1pt]{\scriptsize Domain Refinement}\\[-2pt]$\downarrow$\\[-2pt]
 \textbf{REFINED TRANSCRIPT}\\[-1pt] $\downarrow$\\[-2pt]
 \textbf{GPT-OSS-120B}\\[-1pt]{\scriptsize Documentation}\\[-2pt]$\downarrow$\\[-2pt]
 \textbf{MEETING RECORD}
@@ -108,7 +108,7 @@ Each model has one clearly defined responsibility, keeping transcription, refine
 \node[box,right=of a] (b) {Input\\Validation};
 \node[dark,right=of b] (c) {FASTER-WHISPER SMALL + VAD\\\scriptsize Audio → Text};
 \node[box,right=of c] (d) {Raw\\Transcript};
-\node[dark,right=of d] (e) {GPT-OSS-120B\\\tiny Refinement};
+\node[dark,right=of d] (e) {GPT-OSS-20B\\\tiny Refinement};
 \node[box,below=of e] (f) {Refined\\Transcript};
 \node[dark,left=of f] (g) {GPT-OSS-120B\\\tiny Documentation};
 \node[box,left=of g] (h) {Evidence\\Validation};
@@ -266,7 +266,7 @@ The raw transcript is not merely an intermediate variable. It is an explicit pro
 \vspace{4pt}
 
 \begin{darkcard}
-\textbf{openai/gpt-oss-120b}\hfill \textsc{Inference via Groq}\par
+\textbf{openai/gpt-oss-20b}\hfill \textsc{Inference via Groq}\par
 \vspace{2pt}
 The refinement model receives the raw transcript and performs controlled language cleanup. Its responsibility is to improve transcript quality, terminology and readability while preserving the underlying meaning.
 \end{darkcard}
@@ -321,7 +321,7 @@ Glossary extraction is optional. If it fails, the system warns and continues ref
 \section*{Long-Meeting Strategy}
 \begin{card}
 \centering
-\textbf{Long transcript} $\rightarrow$ \textbf{Token-aware chunking} $\rightarrow$ \textbf{Sequential GPT-OSS-120B processing} $\rightarrow$ \textbf{Ordered reconstruction} $\rightarrow$ \textbf{Refined transcript}
+\textbf{Long transcript} $\rightarrow$ \textbf{Token-aware chunking} $\rightarrow$ \textbf{Sequential GPT-OSS-20B processing} $\rightarrow$ \textbf{Ordered reconstruction} $\rightarrow$ \textbf{Refined transcript}
 \end{card}
 
 \vspace{4pt}
@@ -434,7 +434,7 @@ Summary, decisions, action items and supporting context in an evaluator-friendly
 \vspace{4pt}
 \begin{card}
 \textbf{Why two language models?}\par
-GPT-OSS-120B answers: \textit{How can the transcript be represented more accurately without changing its meaning?}\par
+GPT-OSS-20B answers: \textit{How can the transcript be represented more accurately without changing its meaning?}\par
 GPT-OSS-120B answers: \textit{What decisions and actionable information can safely be extracted?}\par
 The separation makes the source conversation and the extracted meeting record independently inspectable.
 \end{card}
@@ -520,14 +520,9 @@ Evidence validation & Reject unsupported claim & Plausible language is not evide
 \twocard{Reasoning-token control}{GPT-OSS models are reasoning models. Long structured requests can consume generation budget before valid JSON appears, so reasoning behavior and output budgets are controlled.}{API-key protection}{\small Exceptions are sanitized before logging so live credentials do not accidentally appear in terminal output or application error messages.}
 
 \vspace{4pt}
-\section*{Long-Recording Verification}
+\section*{Long-Recording Robustness}
 \begin{card}
-A real approximately 15-minute meeting exposed the practical token-budget problem. After token-aware chunking and the hardened request path, the full pipeline completed successfully.
-\vspace{4pt}
-\begin{tabularx}{\textwidth}{@{}XXXX@{}}
-\textbf{Raw transcript} & \textbf{Refined transcript} & \textbf{Decisions} & \textbf{Action items}\\
-14,073 characters & 14,104 characters & 2 confirmed & 4 extracted
-\end{tabularx}
+Long-recording behavior is protected by token-aware chunking, sequential reconstruction and structured-output recovery. The current verification set explicitly exercises these failure modes rather than relying on a single oversized request.
 \end{card}
 
 \vspace{4pt}
@@ -581,14 +576,14 @@ received $\rightarrow$ validated $\rightarrow$ transcribing $\rightarrow$ raw\_r
 \end{card}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.44\textwidth}
-\begin{darkcard}\centering\fontsize{20}{22}\selectfont\bfseries 99 / 99\par\vspace{1pt}\normalsize automated tests passing\end{darkcard}
+\begin{darkcard}\centering\fontsize{20}{22}\selectfont\bfseries 104 / 104\par\vspace{1pt}\normalsize automated tests passing\end{darkcard}
 \begin{card}\small
 \textbf{Coverage}\par\vspace{1pt}
 Evidence · Pipeline · Refinement · Safety · UI
 \end{card}
 \begin{card}\small
 \textbf{Real-meeting verification}\par\vspace{1pt}
-A real approximately 15-minute recording completed audio → transcription → refinement → documentation → validation → export.
+Current verification covers audio validation, token-aware chunking, refinement, documentation, evidence validation and export through the automated regression suite.
 \end{card}
 \begin{darkcard}\small
 \textbf{Evaluator path}\par\vspace{1pt}
@@ -637,7 +632,7 @@ refinement\_audit.json
 \midrule
 Language & Python & Pipeline implementation\\
 Speech-to-text & faster-whisper small + Silero VAD & Audio → raw transcript\\
-Refinement & GPT-OSS-120B & Domain-aware correction\\
+Refinement & GPT-OSS-20B & Domain-aware correction\\
 Documentation & GPT-OSS-120B & Structured extraction\\
 Inference & Groq & Hosted LLM inference\\
 UI & Gradio & Upload, status, inspection, export\\
@@ -657,7 +652,7 @@ Testing & Pytest & Regression suite\\
 \midrule
 English meeting audio & faster-whisper small + Silero VAD & \textbf{YES}\\
 Raw transcript & Dedicated preserved artifact & \textbf{YES}\\
-Domain refinement & GPT-OSS-120B & \textbf{YES}\\
+Domain refinement & GPT-OSS-20B & \textbf{YES}\\
 Separate documentation stage & GPT-OSS-120B & \textbf{YES}\\
 Minutes / summary & Structured meeting record & \textbf{YES}\\
 Decisions & Evidence-aware extraction & \textbf{YES}\\

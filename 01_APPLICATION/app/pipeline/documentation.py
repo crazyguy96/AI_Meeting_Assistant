@@ -9,7 +9,12 @@ from app.core.config import (
     GROQ_DOCUMENTATION_MODEL,
 )
 from app.core.utils import render_markdown, sanitize_exception
-from app.pipeline.evidence import normalize_match, protected_tokens
+from app.pipeline.evidence import (
+    _extract_name_tokens,
+    normalize_match,
+    number_words,
+    protected_tokens,
+)
 from app.pipeline.prompts import load_prompt
 from app.pipeline.refinement import (
     _split_text,
@@ -21,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 # Determines whether two texts are near-duplicates using token similarity and SequenceMatcher.
-# Guarded by protected_tokens check so items with different dates, numbers, or negations are never merged.
+# Guarded by protected_tokens, number_words, and entity-name checks so items with different dates,
+# numbers, negations, or entities are never merged.
 def are_near_duplicate_texts(t1: str, t2: str, threshold: float = 0.82) -> bool:
     norm1 = normalize_match(t1)
     norm2 = normalize_match(t2)
@@ -30,6 +36,12 @@ def are_near_duplicate_texts(t1: str, t2: str, threshold: float = 0.82) -> bool:
     if norm1 == norm2:
         return True
     if protected_tokens(t1) != protected_tokens(t2):
+        return False
+    if number_words(t1) != number_words(t2):
+        return False
+    names1 = sorted(_extract_name_tokens(t1))
+    names2 = sorted(_extract_name_tokens(t2))
+    if names1 != names2:
         return False
     ratio = difflib.SequenceMatcher(None, norm1, norm2).ratio()
     if ratio >= threshold:
@@ -151,6 +163,11 @@ def merge_records(chunk_records: list[dict[str, Any]]) -> dict[str, Any]:
                     a_owner = str(a.get("owner") or "Unspecified").lower()
                     if ex_owner not in ("unspecified", "not specified") and a_owner not in ("unspecified", "not specified"):
                         if ex_owner != a_owner:
+                            continue
+                    ex_deadline = str(existing.get("deadline") or "Unspecified").lower()
+                    a_deadline = str(a.get("deadline") or "Unspecified").lower()
+                    if ex_deadline not in ("unspecified", "not specified") and a_deadline not in ("unspecified", "not specified"):
+                        if ex_deadline != a_deadline:
                             continue
                     matched_idx = idx
                     break

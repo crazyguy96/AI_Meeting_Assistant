@@ -121,7 +121,9 @@ def validate_audio_file(file_path: str | Path) -> Path:
 
                 if frame.time is not None:
                     total_duration_decoded = float(frame.time)
-                if frames_checked >= 100:
+                # Allow leading digital silence by continuing to scan frames until sound is detected.
+                # Bound pure-silence scan to 50,000 frames (~15 minutes) to protect against infinite silent streams.
+                if frames_checked >= 50000:
                     break
 
             if frames_checked == 0:

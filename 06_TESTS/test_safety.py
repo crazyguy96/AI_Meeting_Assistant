@@ -65,9 +65,71 @@ def test_unsupported_name_deletion_is_rejected():
     assert "unsupported name change" in reasons
 
 
-def test_supported_name_expansion_with_glossary_is_accepted():
+def test_glossary_cannot_expand_unspoken_names():
+    # Expanding a spoken first name to full name via glossary is rejected
     source = "Sue will take care of deployment."
     modified = "Sue Carpenter will take care of deployment."
     safe, reasons = safe_edit(source, modified, glossary=["Sue Carpenter"])
-    assert safe
-    assert reasons == []
+    assert not safe
+    assert "unsupported name change" in reasons
+
+    source2 = "Jason Somerville did it."
+    modified2 = "Jason Somerville did it."
+    safe2, reasons2 = safe_edit(source2, modified2, glossary=["Jason Somerville"])
+    assert safe2
+    assert reasons2 == []
+
+    source3 = "Fine, Jason, you did it."
+    modified3 = "Fine, Jason Somerville, you did it."
+    safe3, reasons3 = safe_edit(source3, modified3, glossary=["Jason Somerville"])
+    assert not safe3
+    assert "unsupported name change" in reasons3
+
+
+def test_number_words_protection_both_directions():
+    # twelve -> twenty and twenty -> twelve
+    safe1, reasons1 = safe_edit("we have twelve instances", "we have twenty instances")
+    assert not safe1
+    assert "protected information changed" in reasons1
+
+    safe2, reasons2 = safe_edit("we have twenty instances", "we have twelve instances")
+    assert not safe2
+    assert "protected information changed" in reasons2
+
+    # fifteen -> fifty and fifty -> fifteen
+    safe3, reasons3 = safe_edit("latency is fifteen ms", "latency is fifty ms")
+    assert not safe3
+    assert "protected information changed" in reasons3
+
+    safe4, reasons4 = safe_edit("latency is fifty ms", "latency is fifteen ms")
+    assert not safe4
+    assert "protected information changed" in reasons4
+
+
+def test_technical_terms_allowed_when_source_lacks_person_name():
+    # cooper netties -> Kubernetes
+    safe1, reasons1 = safe_edit("deploy on cooper netties", "deploy on Kubernetes")
+    assert safe1
+    assert reasons1 == []
+
+    # post gress -> Postgres
+    safe2, reasons2 = safe_edit("migrate to post gress", "migrate to Postgres")
+    assert safe2
+    assert reasons2 == []
+
+
+def test_semantic_paraphrasing_is_rejected():
+    # smiley fries -> smiley face potatoes
+    safe1, reasons1 = safe_edit("they ordered smiley fries", "they ordered smiley face potatoes")
+    assert not safe1
+    assert "semantic paraphrasing rejected" in reasons1
+
+    # big problem -> major issue
+    safe2, reasons2 = safe_edit("this is a big problem", "this is a major issue")
+    assert not safe2
+    assert "semantic paraphrasing rejected" in reasons2
+
+    # Technical correction remains allowed
+    safe3, reasons3 = safe_edit("use post gress for the database", "use Postgres for the database")
+    assert safe3
+    assert reasons3 == []

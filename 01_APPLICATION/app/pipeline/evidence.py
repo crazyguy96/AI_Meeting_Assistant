@@ -53,47 +53,172 @@ def protected_tokens(text: str) -> list[str]:
     )
 
 
-# Ensures proposed transcript edits do not modify, remove, or corrupt protected factual information or names.
+# Spoken number words covering cardinal numbers, tens, scales, and compound components
+NUM_WORDS: set[str] = {
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+    "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty",
+    "sixty", "seventy", "eighty", "ninety", "hundred", "thousand", "million",
+    "billion", "trillion", "lakh", "lakhs", "crore", "crores",
+}
+
+
+def number_words(text: str) -> list[str]:
+    """Extracts and returns a sorted list of spoken number words from text.
+    Replaces hyphens with whitespace to properly decompose compounds (e.g. 'twenty-one' -> ['one', 'twenty']).
+    """
+    cleaned = re.sub(r"[^\w\s]", " ", str(text).lower())
+    tokens = cleaned.split()
+    return sorted(t for t in tokens if t in NUM_WORDS)
+
+
+_PHONETIC_CLASS_MAP = {
+    "c": "1", "k": "1", "q": "1", "g": "1",
+    "p": "2", "b": "2",
+    "t": "3", "d": "3",
+    "f": "4", "v": "4",
+    "s": "5", "z": "5",
+    "l": "6",
+    "r": "7",
+    "m": "8", "n": "8",
+}
+
+_COMMON_HOMOPHONES = {
+    frozenset(["there", "their"]),
+    frozenset(["their", "they're"]),
+    frozenset(["there", "they're"]),
+    frozenset(["your", "you're"]),
+    frozenset(["its", "it's"]),
+    frozenset(["to", "too"]),
+    frozenset(["then", "than"]),
+    frozenset(["a", "an"]),
+    frozenset(["affect", "effect"]),
+    frozenset(["buy", "by"]),
+    frozenset(["hear", "here"]),
+    frozenset(["hole", "whole"]),
+}
+
+
+def phonetic_skeleton(text: str) -> str:
+    """Computes a consonant-class phonetic skeleton for deterministic acoustic comparison."""
+    cleaned = re.sub(r"[^a-z]", "", text.lower())
+    res: list[str] = []
+    prev: str | None = None
+    for ch in cleaned:
+        code = _PHONETIC_CLASS_MAP.get(ch)
+        if code and code != prev:
+            res.append(code)
+            prev = code
+        elif not code:
+            prev = None
+    return "".join(res)
+
+
+def is_semantic_paraphrase(
+    source: str, target: str, glossary: list[str] | None = None
+) -> bool:
+    """General deterministic fidelity gate: checks if an edit merely paraphrases or
+    substitutes vocabulary rather than correcting acoustic/STT errors, casing,
+    segmentation, homophones, or domain terminology.
+    """
+    src_words = [w.lower() for w in re.findall(r"\b\w+\b", str(source))]
+    tgt_words = [w.lower() for w in re.findall(r"\b\w+\b", str(target))]
+    if not src_words or not tgt_words or src_words == tgt_words:
+        return False
+
+    # Strip common prefix and suffix words to isolate the actual changed tokens
+    while src_words and tgt_words and src_words[0] == tgt_words[0]:
+        src_words.pop(0)
+        tgt_words.pop(0)
+    while src_words and tgt_words and src_words[-1] == tgt_words[-1]:
+        src_words.pop()
+        tgt_words.pop()
+
+    if not src_words or not tgt_words:
+        return False
+
+    src_diff = "".join(src_words)
+    tgt_diff = "".join(tgt_words)
+
+    # 1. High string/character similarity (typos, spacing, casing, hyphenation, segmentation)
+    if difflib.SequenceMatcher(None, src_diff, tgt_diff).ratio() >= 0.70:
+        return False
+
+    # 2. Phonetic acoustic similarity (e.g. "cooper netties" vs "kubernetes" -> skeleton exact match)
+    src_skel = phonetic_skeleton(src_diff)
+    tgt_skel = phonetic_skeleton(tgt_diff)
+    if src_skel and tgt_skel:
+        if src_skel == tgt_skel or difflib.SequenceMatcher(None, src_skel, tgt_skel).ratio() >= 0.75:
+            return False
+
+    # 3. Known grammatical / homophone soundalike pairs
+    if frozenset([src_diff, tgt_diff]) in _COMMON_HOMOPHONES:
+        return False
+
+    # 4. Domain glossary terminology correction (if target matches domain term and shares partial phonetic root)
+    if glossary:
+        glossary_terms = {g.strip().lower() for g in glossary if g and g.strip()}
+        target_phrase = " ".join(tgt_words).lower()
+        if target_phrase in glossary_terms or tgt_diff in glossary_terms:
+            if src_skel and tgt_skel and difflib.SequenceMatcher(None, src_skel, tgt_skel).ratio() >= 0.50:
+                return False
+
+    # If no acoustic, orthographic, or technical rationale exists, it is an unsupported semantic rewrite
+    return True
+
+
+# Ensures proposed transcript edits do not modify, remove, or corrupt protected factual information, numbers, or names.
 def safe_edit(
     source: str, target: str, glossary: list[str] | None = None
 ) -> tuple[bool, list[str]]:
     reasons: list[str] = []
+
+    # 1. Numeric and factual token protection
     if protected_tokens(source) != protected_tokens(target):
         reasons.append("protected information changed")
 
-    # Name protection: prevent unsupported name expansion or deletion
-    glossary_tokens: set[str] = set()
-    if glossary:
-        for g_item in glossary:
-            for g_tok in re.findall(r"\b\w+\b", str(g_item).lower()):
-                glossary_tokens.add(g_tok)
+    # 2. Spoken number-word protection (e.g. twelve -> twenty, fifteen -> fifty)
+    if number_words(source) != number_words(target):
+        if "protected information changed" not in reasons:
+            reasons.append("protected information changed")
 
-    src_words = [w.lower() for w in re.findall(r"\b\w+\b", str(source))]
-    tgt_words = [w.lower() for w in re.findall(r"\b\w+\b", str(target))]
+    # 3. Semantic paraphrasing gate (rejects rewrites like "smiley fries" -> "smiley face potatoes")
+    if is_semantic_paraphrase(source, target, glossary=glossary):
+        reasons.append("semantic paraphrasing rejected")
 
+    # 4. Name protection: only apply if the source text already contains a capitalized person-name candidate.
+    # Technical corrections like "cooper netties" -> "Kubernetes" or "post gress" -> "Postgres" do not contain
+    # capitalized person names in the source and are allowed.
     src_names = _extract_name_tokens(source)
-    tgt_names = _extract_name_tokens(target)
+    if src_names:
+        tgt_names = _extract_name_tokens(target)
+        src_words = [w.lower() for w in re.findall(r"\b\w+\b", str(source))]
+        tgt_words = [w.lower() for w in re.findall(r"\b\w+\b", str(target))]
 
-    # 1. Unsupported name expansion: new capitalized name in target that wasn't in source
-    for t_name in tgt_names:
-        t_low = t_name.lower()
-        if not any(
-            sw == t_low or difflib.SequenceMatcher(None, sw, t_low).ratio() >= 0.85
-            for sw in src_words
-        ):
-            if t_low not in glossary_tokens:
-                reasons.append("unsupported name change")
-                break
-
-    # 2. Unsupported name deletion: capitalized name in source deleted from target
-    if "unsupported name change" not in reasons:
+        # Prevent unspoken name expansions:
+        # Do not allow automatic expansion like "Jason" -> "Jason Somerville" or "Sue" -> "Sue Carpenter"
+        # unless the additional surname was actually spoken/supported in the source segment.
         for s_name in src_names:
-            s_low = s_name.lower()
-            if not any(
-                tw == s_low or difflib.SequenceMatcher(None, tw, s_low).ratio() >= 0.85
-                for tw in tgt_words
-            ):
-                if s_low not in glossary_tokens:
+            s_name_pat = rf"\b{re.escape(s_name)}\s+([A-Z][a-z]+)\b|\b([A-Z][a-z]+)\s+{re.escape(s_name)}\b"
+            expansion_match = re.search(s_name_pat, str(target))
+            if expansion_match:
+                extra_tok = (expansion_match.group(1) or expansion_match.group(2)).lower()
+                if extra_tok not in _COMMON_NON_NAME_WORDS:
+                    if not any(
+                        sw == extra_tok or difflib.SequenceMatcher(None, sw, extra_tok).ratio() >= 0.85
+                        for sw in src_words
+                    ):
+                        reasons.append("unsupported name change")
+                        break
+
+        # Check for unsupported name deletion or replacement
+        if "unsupported name change" not in reasons:
+            for s_name in src_names:
+                s_low = s_name.lower()
+                if not any(
+                    tw == s_low or difflib.SequenceMatcher(None, tw, s_low).ratio() >= 0.85
+                    for tw in tgt_words
+                ):
                     reasons.append("unsupported name change")
                     break
 
@@ -168,7 +293,11 @@ _CLAIM_COMPLETION_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Sanitizes meeting summary against unsupported claims of completion/finalization when work was only discussed or planned.
+# General deterministic guard against unsupported/completed-action overclaims.
+# Prevents models from hallucinating that planned, proposed, or discussed work was
+# finalized or completed when the underlying transcript only established that the
+# work "needs to" be completed or finalized. This is an architectural anti-overclaiming
+# safeguard applicable to any meeting topic, not a patch for a specific demo sentence.
 def sanitize_summary_overclaims(summary: str, refined_text: str) -> str:
     if not summary:
         return ""

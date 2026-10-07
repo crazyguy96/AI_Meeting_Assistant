@@ -310,9 +310,9 @@ def test_cross_section_duplicates_handled_correctly():
     assert validated["action_items"][0]["owner"] == "Bob"
 
 
-def test_both_stages_configured_with_gpt_oss_120b():
+def test_two_separate_language_models_configured():
     from app.core import config
-    assert config.GROQ_REFINEMENT_MODEL == "openai/gpt-oss-120b"
+    assert config.GROQ_REFINEMENT_MODEL == "openai/gpt-oss-20b"
     assert config.GROQ_DOCUMENTATION_MODEL == "openai/gpt-oss-120b"
 
 

@@ -94,7 +94,7 @@ faster-whisper
      ↓
 RAW TRANSCRIPT
      ↓
-GPT-OSS-120B
+GPT-OSS-20B
      ↓
 REFINED TRANSCRIPT
      ↓
@@ -123,7 +123,7 @@ The raw transcript is preserved as its own artifact rather than silently replaci
 
 ### Stage 2 — Domain-Aware Refinement
 
-**GPT-OSS-120B via Groq** improves transcript quality while preserving meaning.
+**GPT-OSS-20B via Groq** improves transcript quality while preserving meaning.
 
 It focuses on:
 
@@ -413,7 +413,7 @@ See `07_SUBMISSION/DEMO.md` for the evaluator-facing demo workflow.
 |---|---|
 | Language | Python |
 | Speech-to-Text | faster-whisper small + Silero VAD |
-| Refinement | `openai/gpt-oss-120b` |
+| Refinement | `openai/gpt-oss-20b` |
 | Documentation | `openai/gpt-oss-120b` |
 | LLM Inference | Groq |
 | UI | Gradio |
@@ -428,12 +428,12 @@ Local STT keeps transcription independent from the hosted LLM stages and provide
 
 Groq provides fast inference for the language-model stages, which is useful for an interactive multi-stage pipeline.
 
-### Why separated LLM stages?
+### Why two separate language models?
 
-The language-model stages have deliberately separated prompts and responsibilities:
+The pipeline uses two genuinely different models with separated prompts and responsibilities:
 
 ```text
-GPT-OSS-120B (Refinement Prompt)
+GPT-OSS-20B (Refinement Prompt)
       ↓
 Transcript Refinement
       ↓
