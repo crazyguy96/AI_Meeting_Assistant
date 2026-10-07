@@ -12,4 +12,5 @@ __pycache__/
 *.log
 *.mov
 *.zip
+/AI_Meeting_Assistant/
 .DS_Store
